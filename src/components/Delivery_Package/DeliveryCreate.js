@@ -506,9 +506,9 @@ function DeliveryCreate(props) {
           IM_WERKS: defaultOrderDetails.PLANT,
         })
         .then((res) => {
-          if (res.data?.status === "SUCCESS") {
-            console.log("Valuation Types:", res.data.result);
-            setValuationTypes(res.data.result || []);
+          if (res.data?.status === true || res.data?.status === "SUCCESS") {
+            console.log("Valuation Types:", res.data.result.IT_BWTAR);
+            setValuationTypes(res.data.result.IT_BWTAR || []);
           } else {
             const msg = res.data?.msg || "Unknown error";
             if (!msg.toLowerCase().startsWith("server")) {
@@ -1447,14 +1447,16 @@ function DeliveryCreate(props) {
                           : "Select Valuation Type"}
                       </option>
 
-                      {valuationTypes.map((item, index) => (
-                        <option
-                          key={index}
-                          value={item.VALUE || item.valuation_type || item.key}
-                        >
-                          {item.TEXT || item.description || item.value}
-                        </option>
-                      ))}
+                      {/* Updated mapping */}
+                      {valuationTypes.map((item, index) => {
+                        const value = typeof item === "object" ? item.BWTAR : item;
+                        return (
+                          <option key={index} value={value}>
+                            {value}
+                          </option>
+                        );
+                      })}
+
                     </select>
 
                     {errors.VALUATION_TYPE && (
@@ -1463,6 +1465,7 @@ function DeliveryCreate(props) {
                   </div>
                 </div>
               </div>
+
 
 
             </div>
