@@ -1013,6 +1013,7 @@ function DeliveryEdit(props) {
                   </div>
                 </div>
               </div> */}
+
               <div className="col">
                 <div className="row">
                   <div className="col-3">
@@ -1037,22 +1038,22 @@ function DeliveryEdit(props) {
                   </div>
                 </div>
               </div>
+
               {console.log(doDetails?.VKORG)}
-              {doDetails?.VKORG === "RECL" ? (
+              {doDetails?.VKORG?.toUpperCase() === "RECL" && (
                 <div className="col">
                   <div className="row">
                     <div className="col-3">
                       <label>Valuation Type</label>
                     </div>
                     <div className="col-9">
-                      {/* <i className="fas fa-angle-down icons"></i> */}
                       <input
                         ref={register({
                           required: true,
                         })}
                         name="VALUATION_TYPE"
-                        disabled={true} // always disabled for edit screen
                         className="disabled-input"
+                        disabled={true}
                         value={doDetails?.VALUATION_TYPE || ""}
                         readOnly
                       />
@@ -1062,8 +1063,13 @@ function DeliveryEdit(props) {
                     </div>
                   </div>
                 </div>
-              ) : null}
+              )}
+
+
+
             </div>
+
+
             <div className="row">
               <div className="col">
                 <div className="row">

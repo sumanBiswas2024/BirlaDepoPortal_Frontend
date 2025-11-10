@@ -1423,48 +1423,49 @@ function DeliveryCreate(props) {
                 </div>
               </div>
 
-              <div className="col">
-                {console.log(valuationTypes, "Valuation Types")}
-                <div className="row">
-                  <div className="col-3">
-                    <label>
-                      Valuation Type<span>*</span>
-                    </label>
-                  </div>
-                  <div className="col-9">
-                    <select
-                      name="VALUATION_TYPE"
-                      ref={register({
-                        required: true,
-                      })}
-                      defaultValue=""
-                      className="form-control"
-                      disabled={valuationTypes.length === 0}
-                    >
-                      <option value="">
-                        {valuationTypes.length === 0
-                          ? "Loading valuation types..."
-                          : "Select Valuation Type"}
-                      </option>
+              {VKORG?.toUpperCase() === "RECL" && (
+                <div className="col">
+                  {console.log(valuationTypes, "Valuation Types")}
+                  <div className="row">
+                    <div className="col-3">
+                      <label>
+                        Valuation Type<span>*</span>
+                      </label>
+                    </div>
+                    <div className="col-9">
+                      <select
+                        name="VALUATION_TYPE"
+                        ref={register({
+                          required: true,
+                        })}
+                        defaultValue=""
+                        className="form-control"
+                        disabled={valuationTypes.length === 0}
+                      >
+                        <option value="">
+                          {valuationTypes.length === 0
+                            ? "Loading valuation types..."
+                            : "Select Valuation Type"}
+                        </option>
 
-                      {/* Updated mapping */}
-                      {valuationTypes.map((item, index) => {
-                        const value = typeof item === "object" ? item.BWTAR : item;
-                        return (
-                          <option key={index} value={value}>
-                            {value}
-                          </option>
-                        );
-                      })}
+                        {valuationTypes.map((item, index) => {
+                          const value = typeof item === "object" ? item.BWTAR : item;
+                          return (
+                            <option key={index} value={value}>
+                              {value}
+                            </option>
+                          );
+                        })}
+                      </select>
 
-                    </select>
-
-                    {errors.VALUATION_TYPE && (
-                      <p className="form-error">This field is required</p>
-                    )}
+                      {errors.VALUATION_TYPE && (
+                        <p className="form-error">This field is required</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
 
 
 
