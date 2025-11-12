@@ -5,7 +5,7 @@ const apis = {
   //   envoirnment === "development"
   //     ? "http://3.7.80.231:3000"
   //     : "http://3.7.80.231:3000",
-  BASE: "https://bcldvportal.birlacorp.com/depot/",
+  BASE: "https://dpportal.birlacorp.com",
   // BASE: "https://dpnapi.birlacorp.com",
   LOGIN: "/login/login",
   CREATE_USER: "/login/create",
