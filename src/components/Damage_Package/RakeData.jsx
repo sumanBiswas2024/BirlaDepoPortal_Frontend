@@ -468,28 +468,43 @@ export const RakeData = (props) => {
 
                       {allData.length > 0 && (
                         <ExcelReport
-                          data={allData.map((ele) => {
-                            return {
-                              ...ele,
-                              DEPOTS: ele.DOCUMENT.map(
-                                (item) => item.DEPOT + " - " + item.DEPOT_NAME
-                              ).join(", "),
-                              STATUS: ele.CLAIM_STATUS
+                          data={allData.map((ele) => ({
+                            RR_NO: ele.RR_NO,
+                            RAKE_NO: ele.RAKE_NO,
+                            RR_DATE: moment(ele.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY"),
+                            RR_QTY: Number(ele.RR_QTY).toFixed(2),
+
+                            USER_ID: ele.USER_ID,
+                            USER_NAME: ele.USER_NAME,
+
+                            DEPOTS: ele.DOCUMENT.map(
+                              (d) => `${d.DEPOT} - ${d.DEPOT_NAME}`
+                            ).join(", "),
+
+                            STATUS:
+                              ele.CLAIM_STATUS
                                 ? "Rake Entry Claimed"
-                                : ele.DAMAGE_DATA.length > 0
-                                ? "Rake Damage Entered"
-                                : ele.RR_NO
-                                ? "Rake Data Entered"
-                                : "",
-                              RR_DATE: moment(ele.RR_DATE, "YYYYMMDD").format(
-                                "DD/MM/YYYY"
-                              ),
-                              APPROVE: approvedStatus(ele),
-                            };
-                          })}
+                                : ele.DAMAGE_DATA?.length > 0
+                                  ? "Rake Damage Entered"
+                                  : ele.RR_NO
+                                    ? "Rake Data Entered"
+                                    : "",
+
+                            APPROVE: approvedStatus(ele),
+
+                            REMARKS: [
+                              ele.CS_COMMENT && `• CS: ${ele.CS_COMMENT}`,
+                              ele.BH_COMMENT && `• BH: ${ele.BH_COMMENT}`,
+                              ele.LG_COMMENT && `• LG: ${ele.LG_COMMENT}`,
+                              ele.SA_COMMENT && `• SA: ${ele.SA_COMMENT}`,
+                            ]
+                              .filter(Boolean)
+                              .join("\n\n"),
+                          }))}
                           fileName={`Rake Data ${moment().format()}`}
                           columns={columns.filter((ele) => ele.title !== "")}
                         />
+
                       )}
                     </div>
                   </div>
@@ -543,8 +558,8 @@ export const RakeData = (props) => {
                           return (
                             <Fragment key={index}>
                               {!ele["APPROVED_CS"] &&
-                              !ele["APPROVED_BH"] &&
-                              !ele["APPROVED_LG"] ? (
+                                !ele["APPROVED_BH"] &&
+                                !ele["APPROVED_LG"] ? (
                                 <td key={index}>
                                   <input
                                     type="radio"

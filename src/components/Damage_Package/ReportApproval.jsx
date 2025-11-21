@@ -597,44 +597,71 @@ export const Report = (props) => {
             <div className="col-12">
               {allData?.length > 0 && (
                 <ExcelReport
-                  data={allData.map((item) => {
-                    return {
-                      ...item,
-                      DELI_DEPOTS: item.DOCUMENT.map((item) => {
-                        return item.MFG_PLANT + " " + item.MFG_PLANT_NAME;
-                      }).join(", "),
-                      DEPOTS: item.DOCUMENT.map((item) => {
-                        return item.DEPOT + " " + item.DEPOT_NAME;
-                      }).join(", "),
-                      STATES: item.DOCUMENT.map((item) => {
-                        return item.DEPOT_REG + " - " + item.DEPOT_REG_DESC;
-                      }).join(", "),
-                      LOCATION: [
-                        ...new Set(
-                          item.DOCUMENT.map((item) => {
-                            return item.DEPOT_LOCATION;
-                          })
-                        ),
-                      ].join(", "),
-                      RR_DATE: moment(item.RR_DATE, "YYYYMMDD").format(
-                        "DD/MM/YYYY"
-                      ),
-                      DATE_OF_RAKE_RECEIVED: moment(
-                        item.DATE_OF_RAKE_RECEIVED,
-                        "YYYYMMDD"
-                      ).format("DD/MM/YYYY"),
-                      DATE_OF_RAKE_COMPLETION: moment(
-                        item.DATE_OF_RAKE_COMPLETION,
-                        "YYYYMMDD"
-                      ).format("DD/MM/YYYY"),
-                      CLAIM_DATE: formatDate(item.CLAIM_DATE),
-                      STATUS: findStatus(item),
-                      APPROVE: approvedStatus(item),
-                    };
-                  })}
+                  data={allData.map((item) => ({
+                    RR_NO: item.RR_NO,
+                    RAKE_NO: item.RAKE_NO,
+
+                    RR_DATE: moment(item.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY"),
+                    DATE_OF_RAKE_RECEIVED: moment(
+                      item.DATE_OF_RAKE_RECEIVED,
+                      "YYYYMMDD"
+                    ).format("DD/MM/YYYY"),
+                    DATE_OF_RAKE_COMPLETION: moment(
+                      item.DATE_OF_RAKE_COMPLETION,
+                      "YYYYMMDD"
+                    ).format("DD/MM/YYYY"),
+
+                    RR_QTY: Number(item.RR_QTY).toFixed(2),
+                    DIRECT_SALE_FROM_SIDING: item.DIRECT_SALE_FROM_SIDING,
+                    QTY_SHIFTED_TO_GODOWN: item.QTY_SHIFTED_TO_GODOWN,
+                    WAGON_TRANSIT: item.WAGON_TRANSIT,
+
+                    CUT_TORN: item.CUT_TORN,
+                    WATER_DMG: item.WATER_DMG,
+                    HANDING_DMG: item.HANDING_DMG,
+                    NEW_BURST: item.NEW_BURST,
+                    BRUST_BAG: item.BRUST_BAG,
+                    TOTAL_DMG: item.TOTAL_DMG,
+                    TOTAL_DMG_PER: item.TOTAL_DMG_PER,
+
+                    CLAIM_DATE: globalDate(item.CLAIM_DATE),
+                    CLAIM_STATUS: item.CLAIM_STATUS,
+                    CLAIM_AMOUNT: item.CLAIM_AMOUNT,
+                    CLAIM_NO: item.CLAIM_NO,
+                    CLAIM_QTY: item.CLAIM_QTY,
+
+                    DEPOTS: item.DOCUMENT.map(
+                      (d) => `${d.DEPOT} - ${d.DEPOT_NAME}`
+                    ).join(", "),
+
+                    DELI_DEPOTS: item.DOCUMENT.map(
+                      (d) => `${d.MFG_PLANT} - ${d.MFG_PLANT_NAME}`
+                    ).join(", "),
+
+                    STATES: item.DOCUMENT.map(
+                      (d) => `${d.DEPOT_REG} - ${d.DEPOT_REG_DESC}`
+                    ).join(", "),
+
+                    LOCATION: [
+                      ...new Set(item.DOCUMENT.map((d) => d.DEPOT_LOCATION)),
+                    ].join(", "),
+
+                    STATUS: findStatus(item),
+                    APPROVE: approvedStatus(item),
+
+                    REMARKS: [
+                      item.CS_COMMENT && `• CS: ${item.CS_COMMENT}`,
+                      item.BH_COMMENT && `• BH: ${item.BH_COMMENT}`,
+                      item.LG_COMMENT && `• LG: ${item.LG_COMMENT}`,
+                      item.SA_COMMENT && `• SA: ${item.SA_COMMENT}`,
+                    ]
+                      .filter(Boolean)
+                      .join("\n\n"),
+                  }))}
                   columns={columnsView.filter((ele) => ele.title !== "")}
                   fileName={`Consolidated Rake Arrival Report ${moment().format()}`}
                 />
+
               )}
             </div>
           </div>

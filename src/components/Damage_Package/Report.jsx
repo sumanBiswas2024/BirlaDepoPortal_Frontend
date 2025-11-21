@@ -682,80 +682,78 @@ export const Report = (props) => {
             <div className="col-12">
               {allData?.length > 0 && (
                 <ExcelReport
-                  data={allData.map((item) => {
-                    return {
-                      ...item,
-                      RR_QTY: Number(item.RR_QTY).toFixed(2),
-                      DELI_DEPOTS: [
-                        ...new Set(
-                          item.DOCUMENT.map((item) => {
-                            return item.MFG_PLANT + " " + item.MFG_PLANT_NAME;
-                          })
-                        ),
-                      ].join(", "),
-                      DEPOTS: [
-                        ...new Set(
-                          item.DOCUMENT.map((item) => {
-                            return item.DEPOT + " " + item.DEPOT_NAME;
-                          })
-                        ),
-                      ].join(", "),
-                      STATES: [
-                        ...new Set(
-                          item.DOCUMENT.map((item) => {
-                            return item.DEPOT_REG + " - " + item.DEPOT_REG_DESC;
-                          })
-                        ),
-                      ].join(", "),
-                      LOCATION: [
-                        ...new Set(
-                          item.DOCUMENT.map((item) => {
-                            return item.DEPOT_LOCATION;
-                          })
-                        ),
-                      ].join(", "),
-                      RR_DATE: moment(item.RR_DATE, "YYYY-MM-DD").format(
-                        "MM/DD/YYYY"
+                  data={allData.map((item) => ({
+                    RAKE_NO: item.RAKE_NO,
+                    RR_NO: item.RR_NO,
+
+                    MATERIAL: item.MATERIAL?.replace(/^0+/, ""),
+                    MATERIAL_DESC: item.MATERIAL_DESC,
+                    DELIVERY_NO: item.DELIVERY_NO,
+
+                    RR_QTY: Number(item.RR_QTY).toFixed(2),
+                    GR_QTY: item.GR_QTY,
+
+                    DEPOTS: [
+                      ...new Set(
+                        item.DOCUMENT.map((d) => `${d.DEPOT} - ${d.DEPOT_NAME}`)
                       ),
-                      DATE_OF_RAKE_RECEIVED: moment(
-                        item.DATE_OF_RAKE_RECEIVED,
-                        "YYYYMMDD"
-                      ).format("MM/DD/YYYY"),
-                      DATE_OF_RAKE_COMPLETION: moment(
-                        item.DATE_OF_RAKE_COMPLETION,
-                        "YYYYMMDD"
-                      ).format("DD/MM/YYYY"),
-                      CLAIM_DATE: item.CLAIM_DATE
-                        ? moment(item.CLAIM_DATE, "YYYYMMDD").format(
-                            "DD/MM/YYYY"
-                          )
-                        : "NA",
-                      SDM_DATA: formatSDMData(item.DOCUMENT).join("\n"),
-                      STATUS: findStatus(item),
-                      APPROVE: approvedStatus(item),
-                      REMARKS: [
-                        {
-                          user: "CS",
-                          value: item.CS_COMMENT,
-                        },
-                        {
-                          user: "BH",
-                          value: item.BH_COMMENT,
-                        },
-                        {
-                          user: "LG",
-                          value: item.LG_COMMENT,
-                        },
-                        {
-                          user: "SA",
-                          value: item.SA_COMMENT,
-                        },
-                      ].join("\n"),
-                    };
-                  })}
+                    ].join(", "),
+
+                    DELI_DEPOTS: [
+                      ...new Set(
+                        item.DOCUMENT.map((d) => `${d.MFG_PLANT} - ${d.MFG_PLANT_NAME}`)
+                      ),
+                    ].join(", "),
+
+                    STATES: [
+                      ...new Set(
+                        item.DOCUMENT.map((d) => `${d.DEPOT_REG} - ${d.DEPOT_REG_DESC}`)
+                      ),
+                    ].join(", "),
+
+                    LOCATION: [
+                      ...new Set(
+                        item.DOCUMENT.map((d) => d.DEPOT_LOCATION)
+                      ),
+                    ].join(", "),
+
+                    RR_DATE: moment(item.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY"),
+
+                    DATE_OF_RAKE_RECEIVED: moment(
+                      item.DATE_OF_RAKE_RECEIVED,
+                      "YYYYMMDD"
+                    ).format("DD/MM/YYYY"),
+
+                    DATE_OF_RAKE_COMPLETION: moment(
+                      item.DATE_OF_RAKE_COMPLETION,
+                      "YYYYMMDD"
+                    ).format("DD/MM/YYYY"),
+
+                    CLAIM_DATE: item.CLAIM_DATE
+                      ? moment(item.CLAIM_DATE, "YYYYMMDD").format("DD/MM/YYYY")
+                      : "NA",
+
+                    SDM_DATA: item.DOCUMENT.map((d) => {
+                      const s = d.SDM_DATA || {};
+                      return `${s.name || ""} - ${s.email || ""} - ${s.mobile || ""}`;
+                    }).join("\n"),
+
+                    STATUS: findStatus(item),
+                    APPROVE: approvedStatus(item),
+
+                    REMARKS: [
+                      item.CS_COMMENT && `• CS: ${item.CS_COMMENT}`,
+                      item.BH_COMMENT && `• BH: ${item.BH_COMMENT}`,
+                      item.LG_COMMENT && `• LG: ${item.LG_COMMENT}`,
+                      item.SA_COMMENT && `• SA: ${item.SA_COMMENT}`,
+                    ]
+                      .filter(Boolean)
+                      .join("\n\n"),
+                  }))}
                   columns={columnsView.filter((ele) => ele.title !== "")}
                   fileName={`Consolidated Rake Arrival Report ${moment().format()}`}
                 />
+
               )}
             </div>
           </div>
