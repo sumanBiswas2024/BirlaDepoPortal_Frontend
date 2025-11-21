@@ -468,21 +468,11 @@ export const RakeData = (props) => {
 
                       {allData.length > 0 && (
                         <ExcelReport
-                          data={allData.map((ele) => ({
-                            RR_NO: ele.RR_NO,
-                            RAKE_NO: ele.RAKE_NO,
-                            RR_DATE: moment(ele.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY"),
-                            RR_QTY: Number(ele.RR_QTY).toFixed(2),
+                          data={allData.map((ele) => {
+                            return {
+                              "View": "View",
 
-                            USER_ID: ele.USER_ID,
-                            USER_NAME: ele.USER_NAME,
-
-                            DEPOTS: ele.DOCUMENT.map(
-                              (d) => `${d.DEPOT} - ${d.DEPOT_NAME}`
-                            ).join(", "),
-
-                            STATUS:
-                              ele.CLAIM_STATUS
+                              "Status": ele.CLAIM_STATUS
                                 ? "Rake Entry Claimed"
                                 : ele.DAMAGE_DATA?.length > 0
                                   ? "Rake Damage Entered"
@@ -490,19 +480,143 @@ export const RakeData = (props) => {
                                     ? "Rake Data Entered"
                                     : "",
 
-                            APPROVE: approvedStatus(ele),
+                              "Remarks": [
+                                `CS: ${ele.CS_COMMENT || "-"}`,
+                                `BH: ${ele.BH_COMMENT || "-"}`,
+                                `LG: ${ele.LG_COMMENT || "-"}`,
+                                `SA: ${ele.SA_COMMENT || "-"}`
+                              ].join("\n"),
 
-                            REMARKS: [
-                              ele.CS_COMMENT && `• CS: ${ele.CS_COMMENT}`,
-                              ele.BH_COMMENT && `• BH: ${ele.BH_COMMENT}`,
-                              ele.LG_COMMENT && `• LG: ${ele.LG_COMMENT}`,
-                              ele.SA_COMMENT && `• SA: ${ele.SA_COMMENT}`,
-                            ]
-                              .filter(Boolean)
-                              .join("\n\n"),
-                          }))}
+                              "Rake No.": ele.RAKE_NO || "-",
+                              "RR No.": ele.RR_NO || "-",
+                              "RR Quantity": Number(ele.RR_QTY || 0).toFixed(2),
+
+                              "RR Date": ele.RR_DATE
+                                ? moment(ele.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY")
+                                : "-",
+
+                              "Delivery Plants":
+                                [...new Set(
+                                  ele.DOCUMENT.map((d) => `${d.MFG_PLANT} ${d.MFG_PLANT_NAME}`)
+                                )].join(", ") || "-",
+
+                              "Rec. Plants":
+                                [...new Set(
+                                  ele.DOCUMENT.map((d) => `${d.DEPOT} ${d.DEPOT_NAME}`)
+                                )].join(", ") || "-",
+
+                              "State":
+                                [...new Set(
+                                  ele.DOCUMENT.map((d) => `${d.DEPOT_REG} - ${d.DEPOT_REG_DESC}`)
+                                )].join(", ") || "-",
+
+                              "Location":
+                                [...new Set(
+                                  ele.DOCUMENT.map((d) => d.DEPOT_LOCATION)
+                                )].join(", ") || "-",
+
+                              "Rake Type": ele.RR_TYPE || "-",
+                              "Wagon Type": ele.WAGON_TYPE || "-",
+                              "CFA Name": ele.HANDLING_PARTY || "-",
+                              "CFA Contact Number": ele.HANDLING_PARTY_PHONE_NO || "-",
+
+                              "SDM Details":
+                                [...new Set(
+                                  ele.DOCUMENT.map(
+                                    (d) =>
+                                      `${d.SDM_DATA?.name || ""} - ${d.SDM_DATA?.email || ""} - ${d.SDM_DATA?.mobile || ""
+                                      }`
+                                  )
+                                )].join("\n") || "-",
+
+                              "Date of Rake Received": ele.DATE_OF_RAKE_RECEIVED
+                                ? moment(ele.DATE_OF_RAKE_RECEIVED, "YYYYMMDD").format("DD/MM/YYYY")
+                                : "-",
+
+                              "Date of Rake Completion": ele.DATE_OF_RAKE_COMPLETION
+                                ? moment(ele.DATE_OF_RAKE_COMPLETION, "YYYYMMDD").format("DD/MM/YYYY")
+                                : "-",
+
+                              "Created At": ele.createdAt
+                                ? moment(ele.createdAt).format("DD/MM/YYYY")
+                                : "-",
+
+                              "Updated At": ele.updatedAt
+                                ? moment(ele.updatedAt).format("DD/MM/YYYY")
+                                : "-",
+
+                              "Receive Time": ele.RECEIVE_TIME || "-",
+                              "Completion Time": ele.COMPLETION_TIME || "-",
+
+                              "Direct Sale from Siding": ele.DIRECT_SALE_FROM_SIDING || "-",
+                              "QTY Shifted to Godown": ele.QTY_SHIFTED_TO_GODOWN || "-",
+                              "Wagon in Transit": ele.WAGON_TRANSIT || "-",
+
+                              "Cut & Torn": ele.CUT_TORN || "-",
+                              "Water Damage": ele.WATER_DMG || "-",
+                              "Handling Damage": ele.HANDING_DMG || "-",
+                              "Burst Bag": ele.NEW_BURST || "-",
+                              "Others": ele.BRUST_BAG || "-",
+                              "Total Damage": ele.TOTAL_DMG || "-",
+                              "Damage %": ele.TOTAL_DMG_PER || "-",
+
+                              "Claim Intimation Date": ele.CLAIM_DATE
+                                ? moment(ele.CLAIM_DATE, "YYYYMMDD").format("DD/MM/YYYY")
+                                : "-",
+
+                              "Is Claim Intimated": ele.CLAIM_INTIMATION_STATUS || "-",
+                              "Claim Qty": ele.CLAIM_QTY || "-",
+                              "Claim Amount": ele.CLAIM_AMOUNT || "-",
+                              "Claim No": ele.CLAIM_NO || "-",
+                              "Claim Status": ele.CLAIM_STATUS || "-",
+
+                              "Demurrage in Rs.": ele.DEM_RS || "-",
+                              "Wharfage in Rs.": ele.WHR_RS || "-",
+                            };
+                          })}
+                          columns={[
+                            { title: "View", key: "View" },
+                            { title: "Status", key: "Status" },
+                            { title: "Remarks", key: "Remarks" },
+                            { title: "Rake No.", key: "Rake No." },
+                            { title: "RR No.", key: "RR No." },
+                            { title: "RR Quantity", key: "RR Quantity" },
+                            { title: "RR Date", key: "RR Date" },
+                            { title: "Delivery Plants", key: "Delivery Plants" },
+                            { title: "Rec. Plants", key: "Rec. Plants" },
+                            { title: "State", key: "State" },
+                            { title: "Location", key: "Location" },
+                            { title: "Rake Type", key: "Rake Type" },
+                            { title: "Wagon Type", key: "Wagon Type" },
+                            { title: "CFA Name", key: "CFA Name" },
+                            { title: "CFA Contact Number", key: "CFA Contact Number" },
+                            { title: "SDM Details", key: "SDM Details" },
+                            { title: "Date of Rake Received", key: "Date of Rake Received" },
+                            { title: "Date of Rake Completion", key: "Date of Rake Completion" },
+                            { title: "Created At", key: "Created At" },
+                            { title: "Updated At", key: "Updated At" },
+                            { title: "Receive Time", key: "Receive Time" },
+                            { title: "Completion Time", key: "Completion Time" },
+                            { title: "Direct Sale from Siding", key: "Direct Sale from Siding" },
+                            { title: "QTY Shifted to Godown", key: "QTY Shifted to Godown" },
+                            { title: "Wagon in Transit", key: "Wagon in Transit" },
+                            { title: "Cut & Torn", key: "Cut & Torn" },
+                            { title: "Water Damage", key: "Water Damage" },
+                            { title: "Handling Damage", key: "Handling Damage" },
+                            { title: "Burst Bag", key: "Burst Bag" },
+                            { title: "Others", key: "Others" },
+                            { title: "Total Damage", key: "Total Damage" },
+                            { title: "Damage %", key: "Damage %" },
+                            { title: "Claim Intimation Date", key: "Claim Intimation Date" },
+                            { title: "Is Claim Intimated", key: "Is Claim Intimated" },
+                            { title: "Claim Qty", key: "Claim Qty" },
+                            { title: "Claim Amount", key: "Claim Amount" },
+                            { title: "Claim No", key: "Claim No" },
+                            { title: "Claim Status", key: "Claim Status" },
+                            { title: "Demurrage in Rs.", key: "Demurrage in Rs." },
+                            { title: "Wharfage in Rs.", key: "Wharfage in Rs." },
+                          ]}
                           fileName={`Rake Data ${moment().format()}`}
-                          columns={columns.filter((ele) => ele.title !== "")}
                         />
 
                       )}
