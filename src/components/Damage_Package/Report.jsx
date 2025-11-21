@@ -682,77 +682,157 @@ export const Report = (props) => {
             <div className="col-12">
               {allData?.length > 0 && (
                 <ExcelReport
-                  data={allData.map((item) => ({
-                    RAKE_NO: item.RAKE_NO,
-                    RR_NO: item.RR_NO,
+                  data={allData.map((item) => {
+                    return {
+                      "View": "View",
 
-                    MATERIAL: item.MATERIAL?.replace(/^0+/, ""),
-                    MATERIAL_DESC: item.MATERIAL_DESC,
-                    DELIVERY_NO: item.DELIVERY_NO,
+                      "Status": findStatus(item),
 
-                    RR_QTY: Number(item.RR_QTY).toFixed(2),
-                    GR_QTY: item.GR_QTY,
+                      "Remarks": [
+                        `CS: ${item.CS_COMMENT || "-"}`,
+                        `BH: ${item.BH_COMMENT || "-"}`,
+                        `LG: ${item.LG_COMMENT || "-"}`,
+                        `SA: ${item.SA_COMMENT || "-"}`
+                      ].join("\n"),
 
-                    DEPOTS: [
-                      ...new Set(
-                        item.DOCUMENT.map((d) => `${d.DEPOT} - ${d.DEPOT_NAME}`)
-                      ),
-                    ].join(", "),
+                      "Rake No.": item.RAKE_NO || "-",
+                      "RR No.": item.RR_NO || "-",
+                      "RR Quantity": Number(item.RR_QTY || 0).toFixed(2),
 
-                    DELI_DEPOTS: [
-                      ...new Set(
-                        item.DOCUMENT.map((d) => `${d.MFG_PLANT} - ${d.MFG_PLANT_NAME}`)
-                      ),
-                    ].join(", "),
+                      "RR Date": item.RR_DATE
+                        ? moment(item.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY")
+                        : "-",
 
-                    STATES: [
-                      ...new Set(
-                        item.DOCUMENT.map((d) => `${d.DEPOT_REG} - ${d.DEPOT_REG_DESC}`)
-                      ),
-                    ].join(", "),
+                      "Delivery Plants":
+                        [...new Set(
+                          item.DOCUMENT.map(
+                            (d) => `${d.MFG_PLANT} ${d.MFG_PLANT_NAME}`
+                          )
+                        )].join(", ") || "-",
 
-                    LOCATION: [
-                      ...new Set(
-                        item.DOCUMENT.map((d) => d.DEPOT_LOCATION)
-                      ),
-                    ].join(", "),
+                      "Rec. Plants":
+                        [...new Set(
+                          item.DOCUMENT.map(
+                            (d) => `${d.DEPOT} ${d.DEPOT_NAME}`
+                          )
+                        )].join(", ") || "-",
 
-                    RR_DATE: moment(item.RR_DATE, "YYYYMMDD").format("DD/MM/YYYY"),
+                      "State":
+                        [...new Set(
+                          item.DOCUMENT.map(
+                            (d) => `${d.DEPOT_REG} - ${d.DEPOT_REG_DESC}`
+                          )
+                        )].join(", ") || "-",
 
-                    DATE_OF_RAKE_RECEIVED: moment(
-                      item.DATE_OF_RAKE_RECEIVED,
-                      "YYYYMMDD"
-                    ).format("DD/MM/YYYY"),
+                      "Location":
+                        [...new Set(
+                          item.DOCUMENT.map((d) => d.DEPOT_LOCATION)
+                        )].join(", ") || "-",
 
-                    DATE_OF_RAKE_COMPLETION: moment(
-                      item.DATE_OF_RAKE_COMPLETION,
-                      "YYYYMMDD"
-                    ).format("DD/MM/YYYY"),
+                      "Rake Type": item.RR_TYPE || "-",
+                      "Wagon Type": item.WAGON_TYPE || "-",
+                      "CFA Name": item.HANDLING_PARTY || "-",
+                      "CFA Contact Number": item.HANDLING_PARTY_PHONE_NO || "-",
 
-                    CLAIM_DATE: item.CLAIM_DATE
-                      ? moment(item.CLAIM_DATE, "YYYYMMDD").format("DD/MM/YYYY")
-                      : "NA",
+                      "SDM Details":
+                        [...new Set(
+                          item.DOCUMENT.map(
+                            (d) =>
+                              `${d.SDM_DATA?.name || ""} - ${d.SDM_DATA?.email || ""} - ${d.SDM_DATA?.mobile || ""
+                              }`
+                          )
+                        )].join("\n") || "-",
 
-                    SDM_DATA: item.DOCUMENT.map((d) => {
-                      const s = d.SDM_DATA || {};
-                      return `${s.name || ""} - ${s.email || ""} - ${s.mobile || ""}`;
-                    }).join("\n"),
+                      "Date of Rake Received": item.DATE_OF_RAKE_RECEIVED
+                        ? moment(item.DATE_OF_RAKE_RECEIVED, "YYYYMMDD").format("DD/MM/YYYY")
+                        : "-",
 
-                    STATUS: findStatus(item),
-                    APPROVE: approvedStatus(item),
+                      "Date of Rake Completion": item.DATE_OF_RAKE_COMPLETION
+                        ? moment(item.DATE_OF_RAKE_COMPLETION, "YYYYMMDD").format("DD/MM/YYYY")
+                        : "-",
 
-                    REMARKS: [
-                      item.CS_COMMENT && `• CS: ${item.CS_COMMENT}`,
-                      item.BH_COMMENT && `• BH: ${item.BH_COMMENT}`,
-                      item.LG_COMMENT && `• LG: ${item.LG_COMMENT}`,
-                      item.SA_COMMENT && `• SA: ${item.SA_COMMENT}`,
-                    ]
-                      .filter(Boolean)
-                      .join("\n\n"),
-                  }))}
-                  columns={columnsView.filter((ele) => ele.title !== "")}
+                      "Created At": item.createdAt
+                        ? moment(item.createdAt).format("DD/MM/YYYY")
+                        : "-",
+
+                      "Updated At": item.updatedAt
+                        ? moment(item.updatedAt).format("DD/MM/YYYY")
+                        : "-",
+
+                      "Receive Time": item.RECEIVE_TIME || "-",
+                      "Completion Time": item.COMPLETION_TIME || "-",
+
+                      "Direct Sale from Siding": item.DIRECT_SALE_FROM_SIDING || "-",
+                      "QTY Shifted to Godown": item.QTY_SHIFTED_TO_GODOWN || "-",
+                      "Wagon in Transit": item.WAGON_TRANSIT || "-",
+
+                      "Cut & Torn": item.CUT_TORN || "-",
+                      "Water Damage": item.WATER_DMG || "-",
+                      "Handling Damage": item.HANDING_DMG || "-",
+                      "Burst Bag": item.NEW_BURST || "-",
+                      "Others": item.BRUST_BAG || "-",
+                      "Total Damage": item.TOTAL_DMG || "-",
+                      "Damage %": item.TOTAL_DMG_PER || "-",
+
+                      "Claim Intimation Date": item.CLAIM_DATE
+                        ? moment(item.CLAIM_DATE, "YYYYMMDD").format("DD/MM/YYYY")
+                        : "-",
+
+                      "Is Claim Intimated": item.CLAIM_INTIMATED_STATUS || "-",
+                      "Claim Qty": item.CLAIM_QTY || "-",
+                      "Claim Amount": item.CLAIM_AMOUNT || "-",
+                      "Claim No": item.CLAIM_NO || "-",
+                      "Claim Status": item.CLAIM_STATUS || "-",
+
+                      "Demurrage in Rs.": item.DEM_RS || "-",
+                      "Wharfage in Rs.": item.WHR_RS || "-",
+                    };
+                  })}
+                  columns={[
+                    { title: "View", key: "View" },
+                    { title: "Status", key: "Status" },
+                    { title: "Remarks", key: "Remarks" },
+                    { title: "Rake No.", key: "Rake No." },
+                    { title: "RR No.", key: "RR No." },
+                    { title: "RR Quantity", key: "RR Quantity" },
+                    { title: "RR Date", key: "RR Date" },
+                    { title: "Delivery Plants", key: "Delivery Plants" },
+                    { title: "Rec. Plants", key: "Rec. Plants" },
+                    { title: "State", key: "State" },
+                    { title: "Location", key: "Location" },
+                    { title: "Rake Type", key: "Rake Type" },
+                    { title: "Wagon Type", key: "Wagon Type" },
+                    { title: "CFA Name", key: "CFA Name" },
+                    { title: "CFA Contact Number", key: "CFA Contact Number" },
+                    { title: "SDM Details", key: "SDM Details" },
+                    { title: "Date of Rake Received", key: "Date of Rake Received" },
+                    { title: "Date of Rake Completion", key: "Date of Rake Completion" },
+                    { title: "Created At", key: "Created At" },
+                    { title: "Updated At", key: "Updated At" },
+                    { title: "Receive Time", key: "Receive Time" },
+                    { title: "Completion Time", key: "Completion Time" },
+                    { title: "Direct Sale from Siding", key: "Direct Sale from Siding" },
+                    { title: "QTY Shifted to Godown", key: "QTY Shifted to Godown" },
+                    { title: "Wagon in Transit", key: "Wagon in Transit" },
+                    { title: "Cut & Torn", key: "Cut & Torn" },
+                    { title: "Water Damage", key: "Water Damage" },
+                    { title: "Handling Damage", key: "Handling Damage" },
+                    { title: "Burst Bag", key: "Burst Bag" },
+                    { title: "Others", key: "Others" },
+                    { title: "Total Damage", key: "Total Damage" },
+                    { title: "Damage %", key: "Damage %" },
+                    { title: "Claim Intimation Date", key: "Claim Intimation Date" },
+                    { title: "Is Claim Intimated", key: "Is Claim Intimated" },
+                    { title: "Claim Qty", key: "Claim Qty" },
+                    { title: "Claim Amount", key: "Claim Amount" },
+                    { title: "Claim No", key: "Claim No" },
+                    { title: "Claim Status", key: "Claim Status" },
+                    { title: "Demurrage in Rs.", key: "Demurrage in Rs." },
+                    { title: "Wharfage in Rs.", key: "Wharfage in Rs." },
+                  ]}
                   fileName={`Consolidated Rake Arrival Report ${moment().format()}`}
                 />
+
 
               )}
             </div>
