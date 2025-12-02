@@ -28,14 +28,15 @@ const SONewRFC = async (body) => {
   }
 };
 
-// STATUS POLLING
+// STATUS POLLING (Improved — returns last SAP error instead of generic message)
+let lastMeaningfulSAPMessage = null;
+
 let fetchStatus = async () => {
   try {
     let pollCount = 0;
     const guid = localStorage.getItem("salesOrderUUID");
 
     if (!guid) {
-      console.warn("[STATUS_POLL] No GUID found, aborting");
       return makeFinalResponseError("Missing GUID. Order creation aborted.");
     }
 
@@ -46,41 +47,51 @@ let fetchStatus = async () => {
       });
 
       const resData = data?.data?.result || {};
-
-      console.log("[STATUS_POLL]", pollCount + 1, "/", MAX_POLLS, resData);
-
       const status = resData.EX_STATUS || "";
       const vbeln = resData.EX_VBELN || "";
 
-      // SUCCESS (Status S or VBELN returned)
+      console.log("[STATUS_POLL]", pollCount + 1, "/", MAX_POLLS, resData);
+
+      // ✅ Store only meaningful SAP messages
+      const msg = resData.EX_MESSAGE1 || resData.EX_MESSAGE2 || resData.EX_MESSAGE3;
+
+      if (msg && msg.trim() !== "" && msg.toLowerCase() !== "pending") {
+        lastMeaningfulSAPMessage = msg;   // Only store real errors, ignore pending
+      }
+
+      // SUCCESS
       if (status === "S" || vbeln !== "") {
         return makeFinalResponse(resData);
       }
 
-      // ERROR (Status E)
+      // ERROR
       if (status === "E") {
         return makeFinalResponse(resData);
       }
 
-      // If blank or pending → continue polling
+      // Continue polling for blank/pending
       pollCount++;
       await sleep(POLL_INTERVAL_MS);
     }
 
-    // ❌ Timeout (no result even after 9 seconds)
+    // ❌ TIMEOUT → Show meaningful SAP message if captured
     return makeFinalResponseError(
+      lastMeaningfulSAPMessage ||
       "SAP did not return any final response. Please try again."
-    );
+    )
 
   } catch (error) {
     console.log("[STATUS_POLL_ERROR] Retrying…");
 
-    // Retry once, but do not loop infinitely
+    // ❌ Network failure → also show last real message if exists
     return makeFinalResponseError(
+      lastMeaningfulSAPMessage ||
       "Network or SAP timeout occurred. Please try again."
     );
   }
 };
+
+
 
 // FORMAT FINAL RESPONSE
 const makeFinalResponse = (data) => {
