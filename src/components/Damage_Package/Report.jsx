@@ -696,6 +696,35 @@ export const Report = (props) => {
                       ].join("\n"),
 
                       "Rake No.": item.RAKE_NO || "-",
+
+                      // Start - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
+                      "DELIVERY_NO":
+                        [
+                          ...item.DOCUMENT.map(d => d.DELIVERY_NO || ""),
+                        ].filter(Boolean).join(", ") || "-",
+
+                      "DISTR_CHNL": "-",  // NOT in Backend Data Response
+
+                      "MATERIAL":
+                        [
+                          ...item.DOCUMENT.map(d =>
+                            d.MATERIAL
+                              ? d.MATERIAL.replace(/^0+/, "").replace(/\.00$/, "")
+                              : ""
+                          )
+                        ].filter(Boolean).join(", ") || "-",
+
+                      "MATERIAL_DESC":
+                        [
+                          ...item.DOCUMENT.map(d => d.MATERIAL_DESC),
+                        ].filter(Boolean).join(", ") || "-",
+
+                      "GR_QTY":
+                        [
+                          ...item.DOCUMENT.map(d => Number(d.GR_QTY || 0).toFixed(2)),
+                        ].filter(Boolean).join(", ") || "-",
+                      // End - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
+
                       "RR No.": item.RR_NO || "-",
                       "RR Quantity": Number(item.RR_QTY || 0).toFixed(2),
 
@@ -793,6 +822,17 @@ export const Report = (props) => {
                     { title: "Status", key: "Status" },
                     { title: "Remarks", key: "Remarks" },
                     { title: "Rake No.", key: "Rake No." },
+                    // Start - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
+                    { title: "Delivery No", key: "DELIVERY_NO", hidden: reportType === "RR" },
+                    { title: "Distr. Chnl.", key: "DISTR_CHNL", hidden: reportType === "RR" },
+                    { title: "Material Code", key: "MATERIAL", hidden: reportType === "RR" },
+                    {
+                      title: "Material Name",
+                      key: "MATERIAL_DESC",
+                      hidden: reportType === "RR",
+                    },
+                    { title: "Delivery Qty", key: "GR_QTY", hidden: reportType === "RR" },
+                    // End - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
                     { title: "RR No.", key: "RR No." },
                     { title: "RR Quantity", key: "RR Quantity" },
                     { title: "RR Date", key: "RR Date" },
@@ -829,7 +869,7 @@ export const Report = (props) => {
                     { title: "Claim Status", key: "Claim Status" },
                     { title: "Demurrage in Rs.", key: "Demurrage in Rs." },
                     { title: "Wharfage in Rs.", key: "Wharfage in Rs." },
-                  ]}
+                  ].filter(c => !c.hidden)}
                   fileName={`Consolidated Rake Arrival Report ${moment().format()}`}
                 />
 
