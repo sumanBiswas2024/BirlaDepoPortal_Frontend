@@ -1674,7 +1674,7 @@ function SalesOrderForm(props) {
                     }
                   // defaultValue={"select"}
                   >
-                    <option>Select</option>
+                    <option value="">Select</option>
                     {allOrderShippingTypes.map((ele, i) => (
                       <option key={i} value={ele.VSART}>
                         {ele.VSART} - {ele.BEZEI}
@@ -1908,7 +1908,9 @@ function SalesOrderForm(props) {
                   disabled={
                     isValidDocType ||
                     !(
-                      selectedShippingType.length !== 0 &&
+                      !!selectedShippingType &&
+                      selectedShippingType !== "" &&
+                      selectedShippingType !== "Select" &&
                       Object.keys(value).length > 0 &&
                       Object.keys(shipToPartyValue).length > 0 &&
                       Object.keys(plantValue).length > 0 &&
@@ -1916,10 +1918,13 @@ function SalesOrderForm(props) {
                     ) ||
                     selectAllOrderType === "ZN02"
                   }
+
                   className={
                     isValidDocType ||
                       !(
-                        selectedShippingType.length !== 0 &&
+                        !!selectedShippingType &&
+                        selectedShippingType !== "" &&
+                        selectedShippingType !== "Select" &&
                         Object.keys(value).length > 0 &&
                         Object.keys(shipToPartyValue).length > 0 &&
                         Object.keys(plantValue).length > 0 &&
