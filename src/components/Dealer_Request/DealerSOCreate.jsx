@@ -1878,8 +1878,7 @@ function DealerSOCreate(props) {
                       Object.keys(shipToPartyValue).length > 0 &&
                       Object.keys(plantValue).length > 0 &&
                       Object.keys(materialValue).length > 0
-                    ) ||
-                    selectAllOrderType === "ZN02"
+                    )
                   }
                   className={
                     isValidDocType ||
@@ -1889,8 +1888,7 @@ function DealerSOCreate(props) {
                         Object.keys(shipToPartyValue).length > 0 &&
                         Object.keys(plantValue).length > 0 &&
                         Object.keys(materialValue).length > 0
-                      ) ||
-                      selectAllOrderType === "ZN02"
+                      )
                       ? "button button-back"
                       : "button button-foreword"
                   }
