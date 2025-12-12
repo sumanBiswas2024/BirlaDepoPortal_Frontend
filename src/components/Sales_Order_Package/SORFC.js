@@ -5,9 +5,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// ⚡ Optimized timeout: 3 polls × 3 sec = 9 seconds total
-const MAX_POLLS = 3;
-const POLL_INTERVAL_MS = 3000;
+// ⏳ Total wait time: 25 seconds
+const MAX_POLLS = 5;
+const POLL_INTERVAL_MS = 5000;  // 5 seconds
+
 
 // MAIN RFC CALL
 const SONewRFC = async (body) => {
