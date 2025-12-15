@@ -189,9 +189,12 @@ function SalesOrderEdit(props) {
     // If sales area is BC01 and L2 reason is required (your UI shows L2/L3 reason), ensure reason exists
     if (selectedSalesArea?.VKORG === "BC01") {
       // if reason is expected to be required in BC01
-      if (!reason || reason === "") {
-        missing.push("L2/L3 Reason");
-      }
+
+      // Date: 15/12/2025 L2/L3 Reason Input Box Non-Mandatory
+      
+      // if (!reason || reason === "") {
+      //   missing.push("L2/L3 Reason");
+      // }
     }
 
     if (missing.length > 0) {
@@ -1698,7 +1701,9 @@ function SalesOrderEdit(props) {
                 <div className="row">
                   <div className="col-3">
                     <label>
-                      L2/L3 Reason<span>*</span>
+                      {/* L2/L3 Reason<span>*</span> */}
+                      {/* Date: 15/12/2025 L2/L3 Reason Input Box Non-Mandatory */}
+                      L2/L3 Reason<span></span>  
                     </label>
                   </div>
                   <div className="col-9">
