@@ -117,6 +117,8 @@ function DealerSOCreate(props) {
   const [materialOptions, setMaterialOptions] = useState([]);
   const [materialValue, setMaterialValue] = useState([]);
   const [soDetails, setSoDetails] = useState({});
+  const [loaderMessage, setLoaderMessage] = useState("");
+
 
   useEffect(() => {
     if (currentState === "3") {
@@ -371,8 +373,34 @@ function DealerSOCreate(props) {
 
     // 4) Call SAP
     props.loading(true);
+
+    let delayTimer;
+
     try {
-      const res = await http.post(apis.CREATE_SALES_ORDER, body);
+
+      // ⏳ Show message ONLY if backend is slow (>9s)
+      delayTimer = setTimeout(() => {
+        setLoaderMessage(
+          "Processing Sales Order… Due to high system load, this may take a little longer. Please do not refresh the page."
+        );
+      }, 9000);
+
+      const SAP_TIMEOUT_MS = 25000; // 25 seconds hard limit
+      let timeoutTriggered = false;
+
+      const sapTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => {
+          timeoutTriggered = true;
+          reject({ code: "SAP_TIMEOUT" });
+        }, SAP_TIMEOUT_MS)
+      );
+
+
+      const res = await Promise.race([
+        http.post(apis.CREATE_SALES_ORDER, body),
+        sapTimeoutPromise,
+      ]);
+
 
       if (res?.data?.result?.SALESDOCUMENT) {
         localStorage.removeItem("salesOrderUUID");
@@ -434,14 +462,44 @@ function DealerSOCreate(props) {
       }
     } catch (err) {
       console.error("[RFC_ERROR]", err);
-      // Keep behavior you already have: call fetchStatus as fallback, but also ensure safe cleanup or retry policy
-      fetchStatus();
-    } finally {
+
+      const isTimeout = err?.code === "SAP_TIMEOUT";
+      const isNetwork =
+        !err?.response ||
+        err?.message?.toLowerCase().includes("network") ||
+        err?.code === "ECONNABORTED";
+
+      if (isTimeout || isNetwork) {
+        Swal.fire({
+          title: "Dealer Sales Order Processing",
+          text:
+            "Your Dealer Sales Order is being processed. This may take a little longer. Please do not refresh.",
+          icon: "warning",
+        });
+
+        fetchStatus(); // GUID must remain
+      } else {
+        Swal.fire(
+          "Error",
+          "Dealer Sales Order creation failed due to a System or Network error. Please try again.",
+          "error"
+        );
+
+        // ✅ MUST remove here
+        localStorage.removeItem("salesOrderUUID");
+      }
+    }
+    finally {
+      clearTimeout(delayTimer);   // 🧼 stop delayed message
+      setLoaderMessage("");       // 🧼 hide overlay
+
       props.loading(false);
-      // release locks
+
+      // 🔓 release locks
       isSavingRef.current = false;
       isSubmittingRef.current = false;
     }
+
   };
 
 
