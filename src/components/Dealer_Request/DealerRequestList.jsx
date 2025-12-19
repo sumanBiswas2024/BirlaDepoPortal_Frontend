@@ -1,5 +1,5 @@
 import moment from "moment";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { connect } from "react-redux";
 import { Link } from "react-router-dom";
@@ -12,7 +12,9 @@ import store from "../../store";
 let today = moment();
 let twodaysback = moment().subtract(30, "day");
 
+
 export const DealerRequestList = (props) => {
+  const checkedDMS = React.useRef([]);
   const { register, handleSubmit, watch, errors } = useForm({
     mode: "onSubmit",
     reValidateMode: "onChange",
@@ -34,7 +36,7 @@ export const DealerRequestList = (props) => {
 
   const fetchDealerRequestList = async (data, loader = true) => {
     try {
-      store.dispatch(loading(true));
+      // store.dispatch(loading(true));
       let fetchedData = await http.post(apis.DEALER_REQUEST_LIST, data);
       if (fetchedData.data.code === 0) {
         setDealerRequestData(fetchedData.data.result);
@@ -43,43 +45,41 @@ export const DealerRequestList = (props) => {
         Swal.fire("Error", fetchedData.data.message, "error");
       }
     } catch (error) {
-    } finally {
-      store.dispatch(loading(false));
+      console.error(error);
     }
   };
 
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+
 
   useEffect(() => {
-    let data = formData;
-    // data.status = Number(data.status);
-    data.offset = offset;
-    data.limit = perPage;
-    if (Object.keys(data).length > 2) {
-      fetchDealerRequestList(data);
+    if (Object.keys(formData).length > 2) {
+      fetchDealerRequestList({
+        ...formData,
+        offset,
+        limit: perPage,
+      });
     }
-  }, [perPage, offset]);
+  }, [formData, offset, perPage]);
 
-  const updateByLoginId = async (refresh = false) => {
-    try {
-      !refresh && store.dispatch(loading(true));
-      let updateData = await http.post(apis.REQUEST_UPDATE_BY_LOGIN);
-      if (updateData.data.status && !refresh) {
-        fetchDealerRequestList(formData);
-      }
-    } catch (error) {
-    } finally {
-      !refresh && store.dispatch(loading(false));
-      await sleep(10000);
-      updateByLoginId(true);
-    }
-  };
 
   useEffect(() => {
-    updateByLoginId(true);
+    let timer;
+
+    const pollUpdateByLoginId = async () => {
+      try {
+        await http.post(apis.REQUEST_UPDATE_BY_LOGIN);
+      } catch (e) { }
+
+      timer = setTimeout(pollUpdateByLoginId, 10000);
+    };
+
+    pollUpdateByLoginId();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, []);
+
 
   const onSubmit = (data) => {
     data.login_id = localStorage.getItem("user_code");
@@ -87,7 +87,7 @@ export const DealerRequestList = (props) => {
     data.offset = offset;
 
     setFormData(data);
-    fetchDealerRequestList(data);
+    // fetchDealerRequestList(data);
   };
 
   const pageChange = ({ selected }) => {
@@ -267,28 +267,57 @@ export const DealerRequestList = (props) => {
       }
     } catch (error) {
     } finally {
-      fetchDealerRequestList(formData);
+      fetchDealerRequestList({
+        ...formData,
+        offset,
+        limit: perPage,
+      });
       store.dispatch(loading(false));
     }
+
   };
 
   // get dms data from sap
   const fetchDMSfromSAP = async (data) => {
     let fm_name = "ZRFC_FETCH_SO_FROM_DMS";
-    let pendingPromise = data.map((data) => {
-      if (data.status === 0) {
+
+    let pendingPromise = data
+      .filter(
+        d =>
+          d.status === 0 &&
+          !checkedDMS.current.includes(d.dms_req_no)
+      )
+      .map(d => {
+        checkedDMS.current.push(d.dms_req_no); // remember it
         return http.post(apis.COMMON_POST_WITH_FM_NAME, {
           fm_name,
-          params: { IM_DMS_REQID: data.dms_req_no },
+          params: { IM_DMS_REQID: d.dms_req_no },
         });
-      }
-    });
+      });
+
+    if (pendingPromise.length === 0) return;
 
     let res = await Promise.all(pendingPromise);
 
-    let updateSOs = res.map((ele, index) => {
-      if (ele?.data.result.IT_SO_DETAILS.length > 0) {
-        let details = ele.data.result.IT_SO_DETAILS[0];
+    let updateSOs = res
+      .map((ele) => {
+        // ❌ Skip failed / unauth SAP responses
+        if (!ele?.data?.status) {
+          console.warn(
+            "SAP RFC failed:",
+            ele?.data?.message || "Unknown error"
+          );
+          return null;
+        }
+
+        const soDetails = ele?.data?.result?.IT_SO_DETAILS;
+
+        // ❌ Skip empty or invalid responses
+        if (!Array.isArray(soDetails) || soDetails.length === 0) {
+          return null;
+        }
+
+        let details = soDetails[0];
 
         let postData = {
           id: getId(details.SO_DMS_REQID, data),
@@ -301,32 +330,26 @@ export const DealerRequestList = (props) => {
             actual_depot_user: localStorage.getItem("user_code"),
           },
         };
+
         return http.post(apis.DEALER_REQUEST_UPDATE, postData);
-        // return postData;
-        // updateSO(postData);
-      }
-    });
+      })
+      .filter(Boolean); // ✅ remove nulls safely
 
-    updateSOs = updateSOs.filter(function (e) {
-      return e;
-    });
-
-    console.log(updateSOs);
     if (updateSOs.length > 0) {
-      let updateStatus = await Promise.all(updateSOs);
-      if (updateStatus) {
-        let data = formData;
-        // data.status = Number(data.status);
-        data.offset = offset;
-        data.limit = perPage;
-        if (Object.keys(data).length > 2) {
-          fetchDealerRequestList(data);
-        }
+      await Promise.all(updateSOs);
+
+      const refreshedData = {
+        ...formData,
+        offset,
+        limit: perPage,
+      };
+
+      if (Object.keys(refreshedData).length > 2) {
+        fetchDealerRequestList(refreshedData);
       }
     }
-
-    // console.log(updateStatus);
   };
+
 
   const getId = (id, data) => {
     let findId = data.find((ele) => ele.dms_req_no === id);
@@ -480,8 +503,13 @@ export const DealerRequestList = (props) => {
                     className="search-button float-right"
                     style={{ color: "#fff" }}
                     onClick={() => {
-                      updateByLoginId();
+                      fetchDealerRequestList({
+                        ...formData,
+                        offset,
+                        limit: perPage,
+                      });
                     }}
+
                   >
                     Refresh
                   </button>
@@ -540,8 +568,8 @@ export const DealerRequestList = (props) => {
                         <td>
                           {ele.so_created_at
                             ? moment(ele.so_created_at).format(
-                                "DD/MM/YY hh:mm a"
-                              )
+                              "DD/MM/YY hh:mm a"
+                            )
                             : "NA"}
                         </td>
                         {Number(ele.status) === 0 ? (

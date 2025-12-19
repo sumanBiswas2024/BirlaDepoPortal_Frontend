@@ -211,15 +211,15 @@ function DealerSOCreate(props) {
 
   //+++++++++++++++++++++++++++++++++++++++++++++++++form submit handler end++++++++++++++++++++++++++++++++++++++++++
 
-  function useAsyncState(initialValue) {
-    const [value, setValue] = useState(initialValue);
-    const setter = (x) =>
-      new Promise((resolve) => {
-        setValue(x);
-        resolve(x);
-      });
-    return [value, setter];
-  }
+  // function useAsyncState(initialValue) {
+  //   const [value, setValue] = useState(initialValue);
+  //   const setter = (x) =>
+  //     new Promise((resolve) => {
+  //       setValue(x);
+  //       resolve(x);
+  //     });
+  //   return [value, setter];
+  // }
   // +++++++++++++++++++++= Update SO +++++++++++++++++++++++++++++++++++++++//
 
   const updateSO = async (login, data, status) => {
@@ -246,7 +246,8 @@ function DealerSOCreate(props) {
         Swal.fire("Error", "Something went wrong", "error");
       }
     } catch (error) {
-      updateSO(login, data, status);
+      console.error(error);
+      Swal.fire("Error", "Unable to update SO status", "error");
     } finally {
       store.dispatch(loading(false));
     }
@@ -445,12 +446,11 @@ function DealerSOCreate(props) {
 
 
   // Sleep function
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+  // function sleep(ms) {
+  //   return new Promise((resolve) => setTimeout(resolve, ms));
+  // }
 
   //   Find by DMS //
-
   useEffect(() => {
     if (id) {
       fetchSODetails(id);
@@ -459,7 +459,7 @@ function DealerSOCreate(props) {
 
   let fetchSODetails = async (id) => {
     try {
-      props.loading(true);
+      // props.loading(true);
       let SODetails = await http.post(apis.DEALER_REQUEST_DETAILS, {
         dms_req_no: id,
         app_id: apis.app_id,
@@ -508,8 +508,7 @@ function DealerSOCreate(props) {
         Swal.fire("Error", "something went wrong", "error");
       }
     } catch (error) {
-    } finally {
-      props.loading(false);
+      console.error(error);
     }
   };
 
@@ -525,7 +524,7 @@ function DealerSOCreate(props) {
 
   let fetchStatus = async () => {
     try {
-      props.loading(true);
+      // props.loading(true);
 
       const guid = localStorage.getItem("salesOrderUUID");
       if (!guid) return;
@@ -591,8 +590,6 @@ function DealerSOCreate(props) {
         localStorage.removeItem("salesOrderUUID");
         fetchAttemptsRef.current = 0;
       }
-    } finally {
-      props.loading(false);
     }
   };
 
@@ -658,14 +655,13 @@ function DealerSOCreate(props) {
 
   //++++++++++++++++++++++++++++++++++++++++++++++++ fetching plant dependent and material dependent shipping type+++++++++++
   let fetchShippingType = () => {
-    props.loading(true);
+    if (!selectedSupplyingPlant?.WERKS || !selectedMaterial?.MATNR) {
+      console.warn("fetchShippingType skipped: plant or material missing");
+      return;
+    }
+
     http
-      // .post(apis.GET_NEW_SHIPPING_TYPE, {
-      //   plant: selectedSupplyingPlant.WERKS,
-      //   material: selectedMaterial.MATNR,
-      // })
       .post(apis.SHIPPING_TYPE_MAINTAINED_TABLE, {
-        // TABLE: "SHIPPING_TYPE",
         params: {
           PLANT: selectedSupplyingPlant.WERKS,
           MATERIAL: selectedMaterial.MATNR.replace(/^0+/, ""),
@@ -673,30 +669,12 @@ function DealerSOCreate(props) {
       })
       .then((result) => {
         if (result.data.status) {
-          // setSelectedShippingType(result.data.data[0].VSART);
-          // setAllOrderShippingTypes(result.data.data);
           setAllOrderShippingTypes(result.data.result);
-        } else {
-          let msg = result.data.msg;
-          if (msg.toLowerCase().startsWith("server")) {
-            return null;
-          } else {
-            Swal.fire({
-              title: "Error!",
-              text: result.data.message,
-              icon: "error",
-              confirmButtonText: "Ok",
-            });
-          }
         }
       })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        props.loading(false);
-      });
+      .catch((err) => console.log(err));
   };
+
 
   useEffect(() => {
     if (
@@ -710,13 +688,23 @@ function DealerSOCreate(props) {
   //+++++++++++++++++++++++++++++++++++++++++++++++++fetching plant dependent material and shipping point +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   useEffect(() => {
     if (Object.keys(selectedSupplyingPlant).length > 0) {
-      props.loading(true);
+      // props.loading(true);
       // let p1 = http.post(apis.GET_ORDER_SHIPPING_POINT, {
       //   lv_plant: selectedSupplyingPlant.WERKS,
       // });
       const findPlant = plant.find(
-        (plant) => plant.WERKS === selectedSupplyingPlant.WERKS
+        (p) => p.WERKS === selectedSupplyingPlant?.WERKS
       );
+
+      // ⛔ THIS IS THE KEY FIX
+      if (!findPlant) {
+        Swal.fire(
+          "Not Allowed",
+          "Selected Shipping Type is not maintained for this Plant",
+          "warning"
+        );
+        return; // 🔴 STOP EXECUTION HERE
+      }
 
       let p1 = Promise.resolve({
         data: {
@@ -732,6 +720,7 @@ function DealerSOCreate(props) {
         },
       });
 
+
       let p2 = http.post(apis.GET_ORDER_MATERIAL_OF_PLANT, {
         lv_plant: selectedSupplyingPlant.WERKS,
       });
@@ -746,9 +735,6 @@ function DealerSOCreate(props) {
         })
         .catch((err) => {
           console.log(err);
-        })
-        .finally(() => {
-          props.loading(false);
         });
     }
   }, [selectedSupplyingPlant]);
@@ -853,48 +839,40 @@ function DealerSOCreate(props) {
   //+++++++++++++++++++++++++++++++++++++++++++++++++fetching plant 2++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
   let fetchPlant2 = (shippingType) => {
-    if (selectAllOrderType !== "ZN02") {
-      props.loading(true);
-      http
-        .post(apis.GET_PLANT2_VALUE, {
-          params: {
-            IM_KUNNR: selectedSoldtoParty.KUNNR,
-            IM_VKORG: selectedSalesArea.VKORG,
-            IM_VTWEG: selectedSalesArea.VTWEG,
-            IM_SPART: selectedSalesArea.SPART,
-            IM_AUART: selectAllOrderType,
-            IM_MATNR: selectedMaterial.MATNR,
-            IM_VSART: shippingType,
-            IM_LOGIN_ID: localStorage.getItem("user_code"),
-          },
-          fm_name: "ZRFC_L1L2_PLANT_POPULATE",
-        })
-        .then((result) => {
-          if (result.data.status) {
-            setPlant2Data(result.data.result.EX_RETURN);
-            setShippingCounter(1);
-          } else {
-            let msg = result.data.msg;
-            if (msg.toLowerCase().startsWith("server")) {
-              return null;
-            } else {
-              Swal.fire({
-                title: "Error!",
-                text: result.data.message,
-                icon: "error",
-                confirmButtonText: "Ok",
-              });
-            }
-          }
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => {
-          props.loading(false);
-        });
+    if (
+      !selectedSupplyingPlant?.WERKS ||
+      !selectedMaterial?.MATNR ||
+      !shippingType
+    ) {
+      console.warn("fetchPlant2 skipped: missing data");
+      return;
     }
+
+    props.loading(true);
+    http
+      .post(apis.GET_PLANT2_VALUE, {
+        params: {
+          IM_KUNNR: selectedSoldtoParty.KUNNR,
+          IM_VKORG: selectedSalesArea.VKORG,
+          IM_VTWEG: selectedSalesArea.VTWEG,
+          IM_SPART: selectedSalesArea.SPART,
+          IM_AUART: selectAllOrderType,
+          IM_MATNR: selectedMaterial.MATNR,
+          IM_VSART: shippingType,
+          IM_LOGIN_ID: localStorage.getItem("user_code"),
+        },
+        fm_name: "ZRFC_L1L2_PLANT_POPULATE",
+      })
+      .then((result) => {
+        if (result.data.status) {
+          setPlant2Data(result.data.result.EX_RETURN);
+          setShippingCounter(1);
+        }
+      })
+      .catch(console.log)
+      .finally(() => props.loading(false));
   };
+
 
   //+++++++++++++++++++++++++++++++++Modal++++++++++++++++++++++++++//
   let openPlant2Modal = () => {
@@ -941,7 +919,7 @@ function DealerSOCreate(props) {
   useEffect(() => {
     if (Object.keys(selectedSalesArea).length > 0) {
       console.log("Called");
-      props.loading(true);
+      // props.loading(true);
       let p1 = http.post(apis.GET_INCO_TERM, {
         LV_CUSTOMER: selectedSalesArea.KUNNR,
         LV_SALESORG: selectedSalesArea.VKORG,
@@ -991,36 +969,9 @@ function DealerSOCreate(props) {
         })
         .catch((err) => {
           console.log(err);
-        })
-        .finally(() => {
-          props.loading(false);
         });
     }
   }, [selectedSalesArea]);
-
-  useEffect(() => {
-    http
-      .post(apis.GET_INCO_TERM, {
-        LV_CUSTOMER: selectedSalesArea.KUNNR,
-        LV_SALESORG: selectedSalesArea.VKORG,
-        LV_DIST: selectedSalesArea.VTWEG,
-        LV_DIV: selectedSalesArea.SPART,
-        lv_user: localStorage.getItem("user_code"),
-        IM_KUNNR: selectedSoldtoParty.KUNNR,
-        IM_WERKS: selectedSupplyingPlant.WERKS,
-      })
-      .then((res) => {
-        if (res.data.result) {
-          setAllOrderIncoTerms(res.data.result);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        props.loading(false);
-      });
-  }, [selectedSalesArea, selectedSoldtoParty, selectedSupplyingPlant]);
 
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++ Sales area dependent into term and trans zone end++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1068,7 +1019,7 @@ function DealerSOCreate(props) {
   }, [selectedShiptoparty]);
 
   const PlantCheck = (row) => {
-    http
+    return http
       .post(apis.COMMON_POST_WITH_FM_NAME, {
         fm_name: "ZRFC_DOCTYPE_PLANT_CHECK",
         params: {
@@ -1079,11 +1030,10 @@ function DealerSOCreate(props) {
       .then((res) => checkDOCType(res.data.result.ET_RETURN, row))
       .catch((err) => {
         console.error("PlantCheck failed:", err);
-        // optionally show a toast / swal to user
-        props.loading(false);
+        throw err; // 🔑 allow caller .catch()
       });
-
   };
+
 
   const checkDOCType = (data, row) => {
     let isError = false;
@@ -1635,7 +1585,7 @@ function DealerSOCreate(props) {
                     <input
                       ref={register}
                       name="SALES_UNIT"
-                      value={selectedMaterial.UOM}
+                      value={selectedMaterial?.UOM || ""}
                       disabled
                     />
                   </div>
