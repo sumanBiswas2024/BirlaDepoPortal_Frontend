@@ -120,6 +120,7 @@ function SalesOrderForm(props) {
   const [plantOptions, setPlantOptions] = useState([]);
   const [materialOptions, setMaterialOptions] = useState([]);
   const [materialValue, setMaterialValue] = useState([]);
+  const [loaderMessage, setLoaderMessage] = useState("");
 
   // Auto-resets button locks
   useEffect(() => {
@@ -403,8 +404,18 @@ function SalesOrderForm(props) {
     // --------------------------
     // RFC CALL
     // --------------------------
+
+    let delayTimer;
+
     try {
       props.loading(true);
+
+      // ⏳ FRONTEND DELAY MESSAGE AFTER 9 SECONDS
+      delayTimer = setTimeout(() => {
+        setLoaderMessage(
+          "Processing Sales Order… Due to high system load, this may take a little longer. Please do not refresh the page."
+        );
+      }, 9000);
 
       const res = await SONewRFC(postData);
 
@@ -428,6 +439,9 @@ function SalesOrderForm(props) {
       console.error("RFC Error:", error);
 
     } finally {
+      clearTimeout(delayTimer);   // ⛔ stop delay timer
+      setLoaderMessage("");       // reset message
+
       props.loading(false);
       console.log("%c[UNLOCK] Releasing save locks", "color:#20c997;font-weight:bold;");
       isSavingRef.current = false;
@@ -1156,6 +1170,39 @@ function SalesOrderForm(props) {
           <span className="process-text">Complete</span>
         </div>
       </div>
+
+      {loaderMessage && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9998,
+            background: "rgba(255,255,255,0.85)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            padding: "20px",
+            pointerEvents: "all",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "480px",
+              background: "#fff3cd",
+              border: "1px solid #ffeeba",
+              borderRadius: "8px",
+              padding: "20px",
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#333",
+            }}
+          >
+            {loaderMessage}
+          </div>
+        </div>
+      )}
+
 
       <div className={currentState !== "3" ? "row input-area" : "d-none"}>
         <form onSubmit={handleSubmit(onSubmit)}>
