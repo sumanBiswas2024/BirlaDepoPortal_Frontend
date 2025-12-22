@@ -9,8 +9,11 @@ import http from "../../services/apicall";
 import apis from "../../services/apis";
 import store from "../../store";
 
+// let today = moment();
+// let twodaysback = moment().subtract(30, "day");
+
 let today = moment();
-let twodaysback = moment().subtract(30, "day");
+let twodaysback = moment().subtract(2, "day");    // Date: 22/12/2025 Issue: Date Validation in DealerSOList
 
 
 export const DealerRequestList = (props) => {
@@ -87,6 +90,23 @@ export const DealerRequestList = (props) => {
 
 
   const onSubmit = (data) => {
+
+    // Date: 22/12/2025 Issue: Date Validation in DealerSOList
+    const start = moment(data.start_date);
+    const end = moment(data.end_date);
+
+    const diffInDays = end.diff(start, "days");
+
+    // Max 31 days validation
+    if (diffInDays > 31) {
+      Swal.fire({
+        title: "Error",
+        text: "Date should be within 31 days",
+        icon: "error",
+      });
+      return; // STOP submission
+    }
+
     data.login_id = localStorage.getItem("user_code");
     data.limit = Number(perPage);
     data.offset = offset;
