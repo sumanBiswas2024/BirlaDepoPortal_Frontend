@@ -979,7 +979,8 @@ function DealerSOCreate(props) {
   useEffect(() => {
     if (Object.keys(selectedSalesArea).length > 0) {
       console.log("Called");
-      // props.loading(true);
+      props.loading(true);    //Date: 22/12/2025 Issue: Loading Issue in DealerSOList
+
       let p1 = http.post(apis.GET_INCO_TERM, {
         LV_CUSTOMER: selectedSalesArea.KUNNR,
         LV_SALESORG: selectedSalesArea.VKORG,
@@ -1029,6 +1030,9 @@ function DealerSOCreate(props) {
         })
         .catch((err) => {
           console.log(err);
+        })
+        .finally(() => {
+          props.loading(false); // Date: 22/12/2025 Issue: Loading Issue in DealerSOList
         });
     }
   }, [selectedSalesArea]);
