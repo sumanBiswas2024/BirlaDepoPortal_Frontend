@@ -517,7 +517,7 @@ function DealerSOCreate(props) {
 
   let fetchSODetails = async (id) => {
     try {
-      // props.loading(true);
+      props.loading(true);   // START loader immediately   //Date: 22/12/2025 Issue: Loading Issue in DealerSOList
       let SODetails = await http.post(apis.DEALER_REQUEST_DETAILS, {
         dms_req_no: id,
         app_id: apis.app_id,
@@ -567,6 +567,8 @@ function DealerSOCreate(props) {
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      props.loading(false);  // STOP loader when data is ready  // Date: 22/12/2025 Issue: Loading Issue in DealerSOList
     }
   };
 
