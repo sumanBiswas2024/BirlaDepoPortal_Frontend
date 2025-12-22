@@ -35,6 +35,7 @@ export const DealerRequestList = (props) => {
   const [offset, setOffset] = useState(0);
 
   const fetchDealerRequestList = async (data, loader = true) => {
+    store.dispatch(loading(true));  //START loader    //Date: 22/12/2025 Issue: Loading Issue in DealerSOList
     try {
       // store.dispatch(loading(true));
       let fetchedData = await http.post(apis.DEALER_REQUEST_LIST, data);
@@ -46,6 +47,10 @@ export const DealerRequestList = (props) => {
       }
     } catch (error) {
       console.error(error);
+      Swal.fire("Error", "Failed to load data", "error");
+    }
+    finally {
+      store.dispatch(loading(false)); // STOP loader    //Date: 22/12/2025 Issue: Loading Issue in DealerSOList
     }
   };
 
