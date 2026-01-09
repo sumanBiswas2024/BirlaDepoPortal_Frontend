@@ -683,6 +683,7 @@ export const Report = (props) => {
               {allData?.length > 0 && (
                 <ExcelReport
                   data={allData.map((item) => {
+
                     return {
                       "View": "View",
 
@@ -697,32 +698,46 @@ export const Report = (props) => {
 
                       "Rake No.": item.RAKE_NO || "-",
 
-                      // Start - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
-                      "DELIVERY_NO":
-                        [
-                          ...item.DOCUMENT.map(d => d.DELIVERY_NO || ""),
-                        ].filter(Boolean).join(", ") || "-",
+                      // // Start - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
+                      // "DELIVERY_NO":
+                      //   [
+                      //     ...item.DOCUMENT.map(d => d.DELIVERY_NO || ""),
+                      //   ].filter(Boolean).join(", ") || "-",
+
+                      "DELIVERY_NO": item.DELIVERY_NO || "-", // Date: 08/01/2025 Issue: Multiple Delivery No. in Rake Arrival Report
 
                       "DISTR_CHNL": "-",  // NOT in Backend Data Response
 
-                      "MATERIAL":
-                        [
-                          ...item.DOCUMENT.map(d =>
-                            d.MATERIAL
-                              ? d.MATERIAL.replace(/^0+/, "").replace(/\.00$/, "")
-                              : ""
-                          )
-                        ].filter(Boolean).join(", ") || "-",
+                      "MATERIAL": item.MATERIAL
+                        ? `\u200B${String(item.MATERIAL)
+                          .replace(/^0+/, "")
+                          .replace(/\.0+$/, "")}`
+                        : "-" ,                // Date: 08/01/2025 Issue: Multiple MATERIAL No. in Rake Arrival Report
 
-                      "MATERIAL_DESC":
-                        [
-                          ...item.DOCUMENT.map(d => d.MATERIAL_DESC),
-                        ].filter(Boolean).join(", ") || "-",
+                      "MATERIAL_DESC": item.MATERIAL_DESC || "-", // Date: 08/01/2025 Issue: Multiple MATERIAL_DESC in Rake Arrival Report
 
-                      "GR_QTY":
-                        [
-                          ...item.DOCUMENT.map(d => Number(d.GR_QTY || 0).toFixed(2)),
-                        ].filter(Boolean).join(", ") || "-",
+                      "GR_QTY": item.GR_QTY
+                        ? Number(item.GR_QTY).toFixed(2)
+                        : "-",              // Date: 08/01/2025 Issue: Multiple GR_QTY in Rake Arrival Report
+
+                      // "MATERIAL":
+                      //   [
+                      //     ...item.DOCUMENT.map(d =>
+                      //       d.MATERIAL
+                      //         ? d.MATERIAL.replace(/^0+/, "").replace(/\.00$/, "")
+                      //         : ""
+                      //     )
+                      //   ].filter(Boolean).join(", ") || "-",
+
+                      // "MATERIAL_DESC":
+                      //   [
+                      //     ...item.DOCUMENT.map(d => d.MATERIAL_DESC),
+                      //   ].filter(Boolean).join(", ") || "-",
+
+                      // "GR_QTY":
+                      //   [
+                      //     ...item.DOCUMENT.map(d => Number(d.GR_QTY || 0).toFixed(2)),
+                      //   ].filter(Boolean).join(", ") || "-",
                       // End - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
 
                       "RR No.": item.RR_NO || "-",
