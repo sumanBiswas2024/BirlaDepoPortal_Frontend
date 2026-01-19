@@ -35,6 +35,12 @@ const apis = {
   COMMON_POST_WITH_TABLE_NAME: "/rfc/common_post_with_table_name",
   SHIPPING_TYPE_MAINTAINED_TABLE: "/rfc/get_shipping_type_from_table",
 
+  // Date: 15/01/2025 Valuation Type New Tab Requirement
+
+  GET_VALUATION_TYPES_NEW: "/rfc/get_valuation_types",
+  ADD_VALUATION_TYPE: "/rfc/add_valuation_type",
+  DELETE_VALUATION_TYPE: "/rfc/delete_valuation_type_by_id",
+
   GET_ORDER_DETAILS: "/get-order-details",
   GET_STORAGE_LOCATIONS: "/get-storage-location",
   GET_LOADING_POINTS: "/get-loading-points",
