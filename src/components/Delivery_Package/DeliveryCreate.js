@@ -52,6 +52,8 @@ function DeliveryCreate(props) {
   const [vehicleOptions, setVehicleOptions] = useState([]);
   const [vehicleValue, setVehicleValue] = useState({});
 
+  const [valuationTypesMaster, setValuationTypesMaster] = useState([]); // Date: 15/01/2025 Valuation Type New Tab Requirement
+
   let location = useLocation();
   const orderIdInputBox = useRef(null);
   const storageLocationRef = useRef(null);
@@ -860,11 +862,51 @@ function DeliveryCreate(props) {
     });
   };
 
+  useEffect(() => {
+    // Date: 15/01/2025 – Valuation Type New Tab Requirement
+    props.loading(true);
+
+    http
+      .post(apis.GET_VALUATION_TYPES_NEW, {})
+      .then((res) => {
+        if (res.data?.code === 0) {
+          setValuationTypesMaster(res.data.result || []);
+        } else {
+          const msg = res.data?.msg || "Unable to fetch valuation types";
+
+          // Follow existing error-handling pattern
+          if (!msg.toLowerCase().startsWith("server")) {
+            Swal.fire({
+              title: "Error!",
+              text: msg,
+              icon: "error",
+              confirmButtonText: "Ok",
+            });
+          }
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching valuation type master:", err);
+
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to fetch valuation type master data",
+          icon: "error",
+          confirmButtonText: "Ok",
+        });
+      })
+      .finally(() => {
+        props.loading(false);
+      });
+  }, []);
+
   // Date: 08/12/2025, Issue: Valuation Type Should be input box if ORDER_TYPE = "ZLO5"
   // Listen to live ORDER_TYPE value from form
-  
+
   const selectedOrderType = watch("ORDER_TYPE");
   const isManualValuation = selectedOrderType === "ZLO5";
+
+  const isZLO5Order = selectedOrderType === "ZLO5"; // Date: 15/01/2025 Valuation Type New Tab Requirement
 
   const isValuationDropdownDisabled =
     valuationTypes.length === 0 && !isManualValuation;
@@ -1477,6 +1519,8 @@ function DeliveryCreate(props) {
 
               {/* Date: 08/12/2025, Issue: Valuation Type should be input box if ORDER_TYPE = "ZLO5" */}
 
+              {/* // Date: 15/01/2025 Valuation Type New Tab Requirement  */}
+
               {VKORG?.toUpperCase() === "RECL" && (
                 <div className="col">
                   <div className="row">
@@ -1487,48 +1531,48 @@ function DeliveryCreate(props) {
                     </div>
 
                     <div className="col-9">
-                      {isManualValuation ? (
-                        <input
-                          type="text"
-                          name="VALUATION_TYPE"
-                          className="form-control"
-                          ref={register({ required: true })}
-                          placeholder="Enter Valuation Type manually"
-                        />
-                      ) : (
-                        <select
-                          name="VALUATION_TYPE"
-                          ref={register({
-                            required:
-                              isManualValuation || valuationTypes.length > 0, // ✔ Correct validation
-                          })}
-                          defaultValue=""
-                          className="form-control"
-                          disabled={valuationTypes.length === 0}
-                        >
-                          <option value="">
-                            {valuationTypes.length === 0
+                      <select
+                        name="VALUATION_TYPE"
+                        ref={register({ required: true })}
+                        className="form-control"
+                        defaultValue=""
+                        disabled={
+                          isZLO5Order
+                            ? valuationTypesMaster.length === 0
+                            : valuationTypes.length === 0
+                        }
+                      >
+                        <option value="">
+                          {isZLO5Order
+                            ? valuationTypesMaster.length === 0
                               ? "Loading valuation types..."
-                              : "Select Valuation Type"}
-                          </option>
+                              : "Select Valuation Type"
+                            : valuationTypes.length === 0
+                            ? "Loading valuation types..."
+                            : "Select Valuation Type"}
+                        </option>
 
-                          {valuationTypes.map((item, index) => {
-                            const value =
-                              typeof item === "object" ? item.BWTAR : item;
-                            return (
-                              <option key={index} value={value}>
-                                {value}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        {(isZLO5Order
+                          ? valuationTypesMaster
+                          : valuationTypes
+                        ).map((item, index) => {
+                          const value = isZLO5Order
+                            ? item.VALUATION_TYPE
+                            : typeof item === "object"
+                            ? item.BWTAR
+                            : item;
+
+                          return (
+                            <option key={index} value={value}>
+                              {value}
+                            </option>
+                          );
+                        })}
+                      </select>
+
+                      {errors.VALUATION_TYPE && (
+                        <p className="form-error">This field is required</p>
                       )}
-
-                      {/* Show error only when field should be active */}
-                      {errors.VALUATION_TYPE &&
-                        !isValuationDropdownDisabled && (
-                          <p className="form-error">This field is required</p>
-                        )}
                     </div>
                   </div>
                 </div>
