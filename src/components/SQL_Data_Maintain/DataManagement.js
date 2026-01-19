@@ -12,6 +12,7 @@ import { MaterialManagement } from "./MaterialMangement";
 import CFAManagement from "./CFAManagement";
 import { IncotermsManagement } from "./IncotermManagement";
 import { GRMaterialManagement } from "./GRMaterialMangement";
+import { ValuationTypeManagement } from "./ValuationTypeManagement";  // Date: 15/01/2025 Valuation Type New Tab Requirement
 
 export default function DataManagement() {
   let location = useLocation();
@@ -46,6 +47,16 @@ export default function DataManagement() {
               to="/dashboard/data-management/incoterm-management"
             >
               Incoterm Management
+            </Link>
+            {/* // Date: 15/01/2025 Valuation Type New Tab Requirement */}
+            <Link
+              className={
+                "tab-button" +
+                (activeOption === "Valuation Type" ? " tab-active" : "")
+              }
+              to="/dashboard/data-management/valuation-type-management"
+            >
+              Valuation Type Management
             </Link>
             <Link
               className={
@@ -92,6 +103,10 @@ export default function DataManagement() {
         </Route>
         <Route path="/dashboard/data-management/incoterm-management">
           <IncotermsManagement />
+        </Route>
+        {/* // Date: 15/01/2025 Valuation Type New Tab Requirement */}
+        <Route path="/dashboard/data-management/valuation-type-management">
+          <ValuationTypeManagement />
         </Route>
         <Route path="/dashboard/data-management/gr-material-management">
           <GRMaterialManagement />

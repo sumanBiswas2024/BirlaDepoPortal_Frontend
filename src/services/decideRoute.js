@@ -58,6 +58,7 @@ const subRoutes = {
   "cfa-management": "CFA Management",
   "incoterm-management": "Incoterm Management",
   "gr-material-management": "GR Material Management",
+  "valuation-type-management":"Valuation Type", // Date: 15/01/2025 Valuation Type New Tab Requirement
   "give-rr-permission":'give-rr-permission'
 };
 
