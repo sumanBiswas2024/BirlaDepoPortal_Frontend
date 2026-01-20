@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "react-router";
 import { useForm } from "react-hook-form";
 import ConfirmDialog from "../dashboard/ConfirmDialogue";
@@ -904,12 +904,45 @@ function DeliveryCreate(props) {
   // Listen to live ORDER_TYPE value from form
 
   const selectedOrderType = watch("ORDER_TYPE");
-  const isManualValuation = selectedOrderType === "ZLO5";
 
   const isZLO5Order = selectedOrderType === "ZLO5"; // Date: 15/01/2025 Valuation Type New Tab Requirement
 
-  const isValuationDropdownDisabled =
-    valuationTypes.length === 0 && !isManualValuation;
+  // Date: 15/01/2025 Valuation Type New Tab Requirement – Filter valuation types by Depot Code for ZLO5
+  const filteredValuationTypes = useMemo(() => {
+    if (
+      selectedOrderType === "ZLO5" &&
+      defaultOrderDetails?.PLANT &&
+      valuationTypesMaster.length > 0
+    ) {
+      return valuationTypesMaster.filter(
+        (item) =>
+          item.DEPT_CODE?.toString().trim() ===
+          defaultOrderDetails.PLANT?.toString().trim()
+      );
+    }
+    return [];
+  }, [selectedOrderType, defaultOrderDetails.PLANT, valuationTypesMaster]);
+
+  // Sync valuation type dropdown with React Hook Form (CRITICAL)
+  // useEffect(() => {
+  //   if (selectedOrderType === "ZLO5") {
+  //     if (filteredValuationTypes.length === 1) {
+  //       // Auto-select if only one valuation type exists
+  //       setValue("VALUATION_TYPE", filteredValuationTypes[0].VALUATION_TYPE);
+  //     } else {
+  //       // Reset when plant/order type changes
+  //       setValue("VALUATION_TYPE", "");
+  //     }
+  //   }
+  // }, [selectedOrderType, filteredValuationTypes, setValue]);
+;
+
+  // Date: 15/01/2025 Valuation Type New Tab Requirement - Reset valuation type ONLY when order type changes
+  useEffect(() => {
+    if (selectedOrderType === "ZLO5") {
+      setValue("VALUATION_TYPE", "");
+    }
+  }, [selectedOrderType, setValue]);
 
   return (
     <div>
@@ -1535,16 +1568,16 @@ function DeliveryCreate(props) {
                         name="VALUATION_TYPE"
                         ref={register({ required: true })}
                         className="form-control"
-                        defaultValue=""
                         disabled={
                           isZLO5Order
-                            ? valuationTypesMaster.length === 0
+                            ? filteredValuationTypes.length === 0
                             : valuationTypes.length === 0
                         }
+                        // disabled={isValuationDisabled}
                       >
                         <option value="">
                           {isZLO5Order
-                            ? valuationTypesMaster.length === 0
+                            ? filteredValuationTypes.length === 0
                               ? "Loading valuation types..."
                               : "Select Valuation Type"
                             : valuationTypes.length === 0
@@ -1553,7 +1586,7 @@ function DeliveryCreate(props) {
                         </option>
 
                         {(isZLO5Order
-                          ? valuationTypesMaster
+                          ? filteredValuationTypes
                           : valuationTypes
                         ).map((item, index) => {
                           const value = isZLO5Order
