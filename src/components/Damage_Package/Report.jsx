@@ -172,6 +172,11 @@ export const Report = (props) => {
       width: "300px",
       hidden: reportType === "RR",
     },
+    {
+      title: "Material Document No",
+      key: "MAT_DOC",
+      width: "200px",
+    },
     { title: "Delivery Qty", key: "GR_QTY", hidden: reportType === "RR" },
     { title: "RR No.", key: "RR_NO" },
     { title: "RR Quantity", key: "RR_QTY" },
@@ -446,7 +451,17 @@ export const Report = (props) => {
           View
         </Link>
       );
-    } else {
+    }
+    else if (key === "MAT_DOC") {
+
+      // RR-wise → take from top-level
+      if (reportType === "RR") {
+        return data.MAT_DOC_NO || "-";
+      }
+
+      return data.MAT_DOC;
+    }
+    else {
       return value ? value : "-";
     }
   };
@@ -712,9 +727,27 @@ export const Report = (props) => {
                         ? `\u200B${String(item.MATERIAL)
                           .replace(/^0+/, "")
                           .replace(/\.0+$/, "")}`
-                        : "-" ,                // Date: 08/01/2025 Issue: Multiple MATERIAL No. in Rake Arrival Report
+                        : "-",                // Date: 08/01/2025 Issue: Multiple MATERIAL No. in Rake Arrival Report
 
                       "MATERIAL_DESC": item.MATERIAL_DESC || "-", // Date: 08/01/2025 Issue: Multiple MATERIAL_DESC in Rake Arrival Report
+
+                      // "Material Document No":
+                      //   [...new Set(
+                      //     (item.DOCUMENT || [])
+                      //       .map(d => d.MAT_DOC)
+                      //       .filter(Boolean)
+                      //   )].join(", ") || "-",
+
+                      "Material Document No":
+                        reportType === "RR"
+                          ? item.MAT_DOC_NO
+                            ? `\u200B${String(item.MAT_DOC_NO)}`
+                            : "-"
+                          : item.MAT_DOC
+                            ? `\u200B${String(item.MAT_DOC)}`
+                            : "-",
+
+
 
                       "GR_QTY": item.GR_QTY
                         ? Number(item.GR_QTY).toFixed(2)
@@ -846,6 +879,7 @@ export const Report = (props) => {
                       key: "MATERIAL_DESC",
                       hidden: reportType === "RR",
                     },
+                    { title: "Material Document No", key: "Material Document No" },
                     { title: "Delivery Qty", key: "GR_QTY", hidden: reportType === "RR" },
                     // End - Issue Date: 03/12/2025 - Some Fields are missing in Rake Arrival Report report
                     { title: "RR No.", key: "RR No." },
