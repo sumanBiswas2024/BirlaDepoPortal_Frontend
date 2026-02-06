@@ -18,6 +18,10 @@ export const RakeHandlingData = (props) => {
   const [documentData, setDocument] = useState([]);
   const [RRDetails, setRRDetails] = useState({});
 
+  // RR No. Validationand Sub-Box Logic
+  const [rrDuplicateError, setRrDuplicateError] = useState(false);
+
+
   const history = useHistory();
 
   const { register, errors, setValue, handleSubmit, watch, getValues } =
@@ -128,11 +132,44 @@ export const RakeHandlingData = (props) => {
         props.loading(false);
       });
   };
+  useEffect(() => {
+    if (!rrDuplicateError) {
+      setValue("RR_NO_SUFFIX", "");
+    }
+  }, [watchAllFields.RR_NO]);
 
   const onSubmit = async (data) => {
+
+    // RR No. Validationand Sub-Box Logic
+    // if (!/^[0-9]{9}$/.test(data.RR_NO)) {
+    //   Swal.fire({
+    //     icon: "error",
+    //     title: "Oops...",
+    //     text: "RR Number must be exactly 9 digits and numeric only",
+    //   });
+    //   return;
+    // }
+    // 🔒 Final RR number logic
+    let finalRRNo = data.RR_NO;
+
+    if (rrDuplicateError) {
+      if (!data.RR_NO_SUFFIX) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "Please enter RR suffix",
+        });
+        return;
+      }
+      finalRRNo = data.RR_NO + data.RR_NO_SUFFIX;
+    }
+    data.RR_NO = finalRRNo; // RR No. Validationand Sub-Box Logic
+
+
     let postData = {
       ...data,
       RR_NO: data.RR_NO.toString().trim(),
+      // RR_NO: finalRRNo,
       RAKE_NO: alreadySaved ? data.RAKE_NO : data.RAKE_NO_PREFIX + data.RAKE_NO,
       // format the date field
       RR_DATE: moment(data.RR_DATE, "YYYY-MM-DD").format("YYYYMMDD"),
@@ -153,15 +190,15 @@ export const RakeHandlingData = (props) => {
       delete postData.RAKE_NO_PREFIX;
     }
 
-    // the rr_no should be between 9 to 20 characters else throw error
-    if (!(postData.RR_NO.length >= 9 && postData.RR_NO.length <= 20)) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "RR Number should be between 9 to 20 characters",
-      });
-      return;
-    }
+    // // the rr_no should be between 9 to 20 characters else throw error
+    // if (!(postData.RR_NO.length >= 9 && postData.RR_NO.length <= 20)) {
+    //   Swal.fire({
+    //     icon: "error",
+    //     title: "Oops...",
+    //     text: "RR Number should be between 9 to 20 characters",
+    //   });
+    //   return;
+    // }
 
     if (postData.RR_NO.includes("/")) {
       Swal.fire({
@@ -228,20 +265,21 @@ export const RakeHandlingData = (props) => {
       postData.USER_NAME = props.Auth.userdetails.name;
     }
 
-    if (postData.RR_NO.length <= 9 && postData.RR_NO.length >= 20) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "RR Number should be between 9 to 20 characters",
-      });
-      return;
-    }
+    // if (postData.RR_NO.length <= 9 && postData.RR_NO.length >= 20) {
+    //   Swal.fire({
+    //     icon: "error",
+    //     title: "Oops...",
+    //     text: "RR Number should be between 9 to 20 characters",
+    //   });
+    //   return;
+    // }
 
     props.loading(true);
     http
       .post(url, postData)
       .then((res) => {
         if (res.data.code === 0) {
+          setRrDuplicateError(false);
           Swal.fire({
             icon: "success",
             title: "Success",
@@ -253,13 +291,25 @@ export const RakeHandlingData = (props) => {
           });
         } else {
           console.log(res.data);
+
+          setRrDuplicateError(true); // RR No. Validationand Sub-Box Logic
+
+          const isSuffixDuplicate = rrDuplicateError === true; // RR No. Validationand Sub-Box Logic
+
           Swal.fire({
             icon: "error",
-            title: "Oops...",
-            html: `<p>RR no already entered in the system</p>
-                   <br/>
-                  <p>RR is entered by ${res.data.data.HANDLING_PARTY}</p>`,
+            title: "RR Already Exists",
+            html: isSuffixDuplicate
+              ? `<p>This RR number with the given suffix already exists.</p>
+                 <p>Please use a different suffix.</p>`
+              : `<p>RR no already entered in the system.</p>
+                 <br/>
+                 <p>RR is entered by ${res.data.data.HANDLING_PARTY}</p>
+                 <br/>
+                 <p>Please enter RR suffix</p>`
           });
+
+          return;
         }
       })
       .catch((err) => {
@@ -572,6 +622,24 @@ export const RakeHandlingData = (props) => {
     return depotNamesString;
   };
 
+  // RR No. Validationand Sub-Box Logic
+  const handleRRNoChange = (e) => {
+  const value = e.target.value.replace(/[^0-9]/g, "");
+
+  // hard stop at >9 digits
+  if (value.length > 9) {
+    Swal.fire({
+      icon: "error",
+      title: "Oops...",
+      text: "RR Number must be exactly 9 digits and numeric only",
+    });
+    return;
+  }
+
+  setValue("RR_NO", value);
+};
+
+
   return (
     <div
       style={{
@@ -683,7 +751,7 @@ export const RakeHandlingData = (props) => {
                 </label>
               </div>
               <div className="col-12 depot-select">
-                <input
+                {/* <input
                   ref={register({
                     required: true,
                   })}
@@ -691,6 +759,48 @@ export const RakeHandlingData = (props) => {
                   disabled={id}
                   type="text"
                 />
+              </div> */}
+              
+              {/* // RR No. Validationand Sub-Box Logic */}
+                <div style={{ display: "flex" }}>
+                  <input
+                    name="RR_NO"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={9}                          // 🔒 HARD LIMIT
+                    disabled={alreadySaved || rrDuplicateError}
+                    onChange={handleRRNoChange}     // ✅ LIVE validation
+                    ref={register({
+                      required: true,
+                      pattern: /^[0-9]{9}$/,        // submit-level safety
+                    })}
+                    style={{
+                      width: rrDuplicateError ? "70%" : "100%",
+                      borderRadius: rrDuplicateError ? "4px 0 0 4px" : "4px",
+                    }}
+                  />
+
+
+                  {rrDuplicateError && (
+                    <input
+                      ref={register({
+                        required: true,
+                        maxLength: 1,
+                        pattern: /^[A-Za-z@#$%&*]$/, // one letter OR special char
+                      })}
+                      name="RR_NO_SUFFIX"
+                      type="text"
+                      maxLength={1}
+                      placeholder="@ / A"
+                      style={{
+                        width: "30%",
+                        borderLeft: "0",
+                        borderRadius: "0 4px 4px 0",
+                      }}
+                    />
+                  )}
+                </div>
+
               </div>
             </div>
             {errors.RR_NO && (
@@ -820,13 +930,11 @@ export const RakeHandlingData = (props) => {
                     disabled={damageDataEntered()}
                   >
                     <option
-                      value={`${localStorage.getItem("user_code")} - ${
-                        props.Auth.userdetails.name
-                      }`}
+                      value={`${localStorage.getItem("user_code")} - ${props.Auth.userdetails.name
+                        }`}
                     >
-                      {`${localStorage.getItem("user_code")} - ${
-                        props.Auth.userdetails.name
-                      }`}
+                      {`${localStorage.getItem("user_code")} - ${props.Auth.userdetails.name
+                        }`}
                     </option>
                   </select>
                 )}
