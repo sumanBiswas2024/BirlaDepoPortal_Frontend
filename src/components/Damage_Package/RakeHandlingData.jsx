@@ -624,20 +624,41 @@ export const RakeHandlingData = (props) => {
 
   // RR No. Validationand Sub-Box Logic
   const handleRRNoChange = (e) => {
-  const value = e.target.value.replace(/[^0-9]/g, "");
+    const value = e.target.value.replace(/[^0-9]/g, "");
 
-  // hard stop at >9 digits
-  if (value.length > 9) {
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: "RR Number must be exactly 9 digits and numeric only",
-    });
-    return;
-  }
+    // hard stop at >9 digits
+    if (value.length > 9) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "RR Number must be exactly 9 digits and numeric only",
+      });
+      return;
+    }
 
-  setValue("RR_NO", value);
-};
+    setValue("RR_NO", value);
+  };
+
+  // Date of rake completion cannot be prior to date of rake submission Validation
+  useEffect(() => {
+    const received = watchAllFields.DATE_OF_RAKE_RECEIVED;
+    const completion = watchAllFields.DATE_OF_RAKE_COMPLETION;
+
+    if (received && completion) {
+      if (moment(completion).isBefore(moment(received))) {
+        setValue("DATE_OF_RAKE_COMPLETION", "", {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+
+        Swal.fire({
+          icon: "error",
+          title: "Invalid Date",
+          text: "Date of Rake Completion cannot be before Date of Rake Received",
+        });
+      }
+    }
+  }, [watchAllFields.DATE_OF_RAKE_RECEIVED]);
 
 
   return (
@@ -760,8 +781,8 @@ export const RakeHandlingData = (props) => {
                   type="text"
                 />
               </div> */}
-              
-              {/* // RR No. Validationand Sub-Box Logic */}
+
+                {/* // RR No. Validationand Sub-Box Logic */}
                 <div style={{ display: "flex" }}>
                   <input
                     name="RR_NO"
@@ -997,10 +1018,11 @@ export const RakeHandlingData = (props) => {
                   type="date"
                   defaultValue={moment().format("YYYY-MM-DD")}
                   disabled={damageDataEntered()}
-                  min={moment(
-                    watchAllFields.DATE_OF_RAKE_COMPLETION,
-                    "YYYY-MM-DD"
-                  ).format("YYYY-MM-DD")}
+                  // min={moment(
+                  //   watchAllFields.DATE_OF_RAKE_COMPLETION,
+                  //   "YYYY-MM-DD"
+                  // ).format("YYYY-MM-DD")}
+                  min={watchAllFields.DATE_OF_RAKE_RECEIVED}
                 />
               </div>
             </div>
