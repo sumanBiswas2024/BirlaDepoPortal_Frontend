@@ -294,6 +294,7 @@ const createMigoPostingData = (data) => {
             MOVE_TYPE: "311",
             RAKE_NO: rakeDetails.RAKE_NO,
             RR_NO: rakeDetails.RR_NO,
+            RR_DATE: moment(rakeDetails.RR_DATE, "YYYY-MM-DD").format("YYYYMMDD"),   // Add RR_DATE in Transfer Posting
             STORAGE_LOC_REC: STRG_LOC_DATA[damageType],
           });
         });
