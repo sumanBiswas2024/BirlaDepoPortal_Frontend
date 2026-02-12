@@ -17,6 +17,8 @@ import store from "../../store";
 import salesHead from "../Inventory_Package/salesHead";
 import DataManagement from "../SQL_Data_Maintain/DataManagement";
 
+import ProtectedRoute from "../Protector/ProtectedRoute";
+
 // import Root from "../root/Root";
 // import SalesOrderPackage from "../Sales_Order_Package/SalesOrderPackage";
 // import DeliveryPackage from "../Delivery_Package/DeliveryPackage";
@@ -216,7 +218,8 @@ function Wrapper(props) {
               <Route path="/dashboard/root">
                 <Root />
               </Route>
-              <Route path="/dashboard/goods-receipt">
+
+              {/* <Route path="/dashboard/goods-receipt">
                 <GoodReceiptPackage />
               </Route>
               <Route path="/dashboard/sales-order">
@@ -234,28 +237,94 @@ function Wrapper(props) {
               <Route path="/dashboard/reports">
                 <ReportPackage />
               </Route>
+              <Route path="/dashboard/dealer-requests">
+                <DealerRequestList />
+              </Route> */}
+
+              <ProtectedRoute
+                path="/dashboard/goods-receipt"
+                component={GoodReceiptPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/sales-order"
+                component={SalesOrderPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/delivery"
+                component={DeliveryPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/diversion"
+                component={Diversion}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/finance"
+                component={FinancePackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/reports"
+                component={ReportPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/dealer-requests"
+                component={DealerRequestList}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 2]}
+              />
+
+
               <Route path="/dashboard/profile">
                 <ProfilePackage />
               </Route>
-              <Route path="/dashboard/user-admin">
+
+              {/* <Route path="/dashboard/user-admin">
                 <UserAdminPackage />
-              </Route>
+              </Route> */}
+
+              <ProtectedRoute
+                path="/dashboard/user-admin"
+                component={UserAdminPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1]}
+              />
 
               {/* data management */}
-              <Route path="/dashboard/data-management">
-                {/* <SQLData /> */}
+              {/* <Route path="/dashboard/data-management">
                 <DataManagement />
-              </Route>
+              </Route> */}
 
-              <Route path="/dashboard/dealer-requests">
-                <DealerRequestList />
-              </Route>
+              <ProtectedRoute
+                path="/dashboard/data-management"
+                component={DataManagement}
+                user={props.Auth.userdetails}
+                allowedRoles={[1]}
+              />
+
+
               <Route path="/dashboard/dealer-sales-order/:id">
                 <DealerSOCreate />
               </Route>
 
               {/* CNF Routes */}
-              <Route path="/dashboard/physical-inventory">
+              {/* <Route path="/dashboard/physical-inventory">
                 <InventoryPackage />
               </Route>
               <Route path="/dashboard/stock-report">
@@ -263,7 +332,30 @@ function Wrapper(props) {
               </Route>
               <Route path="/dashboard/damage-data-entry">
                 <DamagePackage />
-              </Route>
+              </Route> */}
+
+              <ProtectedRoute
+                path="/dashboard/physical-inventory"
+                component={InventoryPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 3]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/stock-report"
+                component={InventoryReportPackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 3]}
+              />
+
+              <ProtectedRoute
+                path="/dashboard/damage-data-entry"
+                component={DamagePackage}
+                user={props.Auth.userdetails}
+                allowedRoles={[1, 3, 4, 5, 6, 7, 9]}
+              />
+
+
             </Switch>
           </div>
         </div>
