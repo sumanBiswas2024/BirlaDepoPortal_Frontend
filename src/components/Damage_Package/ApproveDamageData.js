@@ -5,6 +5,8 @@ import http from "../../services/apicall";
 import apis from "../../services/apis";
 import store from "../../store";
 
+import { v4 as uuidv4 } from "uuid";   // Add uuid in Damage Posting
+
 const approveDamageData = (id, updatedData) => {
   let postData = {
     ...updatedData,
@@ -118,6 +120,11 @@ const createMigoData = async (id) => {
       } else {
         const postData = createMigoPostingData(rr_res.data.data);
 
+        const UUID = uuidv4();   // Add uuid in Damage Posting
+        localStorage.setItem("migoUUID", UUID);
+        console.log("MIGO UUID:", UUID);
+        postData.IM_GUID = UUID;   // Add uuid in Damage Posting
+
         console.log(postData);
 
         if (postData.IM_DATA.length === 0) {
@@ -137,7 +144,8 @@ const createMigoData = async (id) => {
           fm_name: "ZRFC_TRANSFER_POSTING",
           params: {
             ...postData,
-            IM_LOGIN_ID: localStorage.getItem("user_code").replace(/^0+/, ""),
+            IM_LOGIN_ID: localStorage.getItem("user_code").replace(/^0+/, "")
+            // IM_GUID: UUID,  // Add uuid in Damage Posting
           },
         });
         if (migo_res.data.code === 0) {
