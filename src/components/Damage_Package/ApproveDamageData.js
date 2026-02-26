@@ -7,6 +7,9 @@ import store from "../../store";
 
 import { v4 as uuidv4 } from "uuid";   // Add uuid in Damage Posting
 
+// Prevent duplicate MIGO execution
+let isMigoProcessing = false;
+
 const approveDamageData = (id, updatedData) => {
   let postData = {
     ...updatedData,
@@ -21,10 +24,17 @@ const approveDamageData = (id, updatedData) => {
   http
     .post(url, postData)
     .then((res) => {
+      // Swal.fire({
+      //   icon: "success",
+      //   title: "Success",
+      //   text: "Data Updated Successfully",
+      // }).then(() => {
+      //   window.location.href = "/dashboard/damage-data-entry/rake-report";
+      // });
       Swal.fire({
         icon: "success",
         title: "Success",
-        text: "Data Updated Successfully",
+        text: updatedData.SAP_SUCCESS_MESSAGE || "Data Updated Successfully",
       }).then(() => {
         window.location.href = "/dashboard/damage-data-entry/rake-report";
       });
@@ -91,6 +101,14 @@ function isBefore25Nov_2024(dateString) {
 }
 
 const createMigoData = async (id) => {
+  //  Prevent double click / duplicate execution
+  if (isMigoProcessing) {
+    console.warn("Duplicate MIGO prevented");
+    return;
+  }
+
+  isMigoProcessing = true;
+
   try {
     store.dispatch(loading(true));
 
@@ -120,10 +138,24 @@ const createMigoData = async (id) => {
       } else {
         const postData = createMigoPostingData(rr_res.data.data);
 
-        const UUID = uuidv4();   // Add uuid in Damage Posting
-        localStorage.setItem("migoUUID", UUID);
-        console.log("MIGO UUID:", UUID);
-        postData.IM_GUID = UUID;   // Add uuid in Damage Posting
+        // const UUID = uuidv4();   // Add uuid in Damage Posting
+        // localStorage.setItem("migoUUID", UUID);
+        // console.log("MIGO UUID:", UUID);
+        // postData.IM_GUID = UUID;   // Add uuid in Damage Posting
+
+        // ================= UUID REUSE LOGIC (PER RAKE ID) =================
+        let UUID = localStorage.getItem(`migoUUID_${id}`);
+
+        if (!UUID) {
+          UUID = uuidv4();
+          localStorage.setItem(`migoUUID_${id}`, UUID);
+          console.log("NEW MIGO UUID GENERATED:", UUID);
+        } else {
+          console.log("REUSING EXISTING MIGO UUID:", UUID);
+        }
+
+        postData.IM_GUID = UUID;
+        // ================================================================
 
         console.log(postData);
 
@@ -137,6 +169,7 @@ const createMigoData = async (id) => {
             MIGO_RETURN_DATA: "NA",
             MIGO_RETURN_COMMIT: "NA",
           });
+          localStorage.removeItem(`migoUUID_${id}`);
           return;
         }
 
@@ -150,16 +183,61 @@ const createMigoData = async (id) => {
         });
         if (migo_res.data.code === 0) {
           console.log(migo_res.data.result.IT_EXPORT);
-          approveDamageData(id, {
-            APPROVED_SA: localStorage.getItem("user_code"),
-            SA_COMMENT: "",
-            MAT_DOC_NO: migo_res.data.result.IT_EXPORT.map(
-              (ele) => ele.MATDOC_NO
-            ).join(","),
-            MIGO_POSTING_DATA: postData,
-            MIGO_RETURN_DATA: migo_res.data.result.IT_EXPORT,
-            MIGO_RETURN_COMMIT: migo_res.data.result.RETURN_COMMIT,
-          });
+
+          const sapReturnMessage = migo_res.data.result?.LT_RETURN?.[0];
+
+          // approveDamageData(id, {
+          //   APPROVED_SA: localStorage.getItem("user_code"),
+          //   SA_COMMENT: "",
+          //   MAT_DOC_NO: migo_res.data.result.IT_EXPORT.map(
+          //     (ele) => ele.MATDOC_NO
+          //   ).join(","),
+          //   MIGO_POSTING_DATA: postData,
+          //   MIGO_RETURN_DATA: migo_res.data.result.IT_EXPORT,
+          //   MIGO_RETURN_COMMIT: migo_res.data.result.RETURN_COMMIT
+          // });
+
+          if (sapReturnMessage?.TYPE === "S") {
+
+            approveDamageData(id, {
+              APPROVED_SA: localStorage.getItem("user_code"),
+              SA_COMMENT: "",
+              MAT_DOC_NO: migo_res.data.result.IT_EXPORT.map(
+                (ele) => ele.MATDOC_NO
+              ).join(","),
+              MIGO_POSTING_DATA: postData,
+              MIGO_RETURN_DATA: migo_res.data.result.IT_EXPORT,
+              MIGO_RETURN_COMMIT: migo_res.data.result.RETURN_COMMIT,
+              SAP_SUCCESS_MESSAGE: sapReturnMessage.MESSAGE
+            });
+
+            // Clear UUID only on success
+            localStorage.removeItem(`migoUUID_${id}`);
+          }
+
+          else if (sapReturnMessage?.TYPE === "P") {
+
+            await Swal.fire({
+              icon: "info",
+              title: "Pending",
+              text: sapReturnMessage.MESSAGE || "Request already in progress"
+            });
+
+            // DO NOT clear UUID
+            return;
+          }
+
+          else if (sapReturnMessage?.TYPE === "E") {
+
+            await Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: sapReturnMessage.MESSAGE || "Processing failed"
+            });
+
+            // DO NOT clear UUID
+            return;
+          }
         } else {
           Swal.fire({
             icon: "error",
@@ -170,8 +248,19 @@ const createMigoData = async (id) => {
       }
     }
   } catch (err) {
+    console.error("MIGO Processing Error:", err);
+
+    await Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: err?.response?.data?.msg ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Something went wrong while processing MIGO."
+    });
   } finally {
     store.dispatch(loading(false));
+    isMigoProcessing = false;
   }
 };
 
