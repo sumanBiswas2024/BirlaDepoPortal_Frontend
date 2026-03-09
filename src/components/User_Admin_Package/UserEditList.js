@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { loading } from "../../actions/loadingAction";
 import apis from "../../services/apis";
@@ -10,6 +10,7 @@ import Button from "react-bootstrap/Button";
 import Swal from "sweetalert2";
 import ReactExport from "react-export-excel";
 import { getUserType } from "../../data/RAKE_USER_TYPES";
+import ReactPaginate from "react-paginate";
 
 const ExcelFile = ReactExport.ExcelFile;
 const ExcelSheet = ReactExport.ExcelFile.ExcelSheet;
@@ -22,7 +23,7 @@ function UserEditList(props) {
   });
   const [paginatedSalesOrders, setPaginatedSalesOrders] = useState([]);
   const [fetchUsers, setFetchUsers] = useState([]);
-  const [perPage, setPerpage] = useState(10);
+  const [perPage, setPerpage] = useState(50);
   const [pageCount, setPageCount] = useState(20);
   const [page, setPage] = useState(0);
   const [isUserModalVisible, setIsUserModalVisible] = useState(false);
@@ -38,6 +39,9 @@ function UserEditList(props) {
   const [isRFCReset, setIsRFCReset] = useState(false);
   const [newRFCPassword, setNewRFCPassword] = useState("");
 
+  const [allUsersExcel, setAllUsersExcel] = useState([]);
+  const tableRef = useRef(null);
+
   let users = null;
   const [search, setSearch] = useState("");
 
@@ -46,14 +50,39 @@ function UserEditList(props) {
   }, []);
 
   var getUserDeatils = () => {
+    // props.loading(true);
+    // http.get(apis.ALLUSER).then((res) => {
+    //   users = res.data.result;
+    //   if (users?.length > 0) {
+    //     setFetchUsers(users);
+    //     setPageCount(users?.length / users.length);
+    //   }
+    // });
     props.loading(true);
-    http.get(apis.ALLUSER).then((res) => {
-      users = res.data.result;
-      if (users?.length > 0) {
-        setFetchUsers(users);
-        setPageCount(users?.length / users.length);
-      }
-    });
+
+    // pagination data
+    http.get(`${apis.ALLUSER}?page=${page + 1}&limit=${perPage}`)   // // Portal Security Assessment_Pagination
+      .then((res) => {
+
+        let users = res.data.result;
+
+        if (users?.length > 0) {
+          setFetchUsers(users);
+          setPageCount(Math.ceil(res.data.total / perPage));
+        }
+
+        props.loading(false);
+
+      });
+
+    // full user list (only once)
+    if (allUsersExcel.length === 0) {
+
+      http.get(`${apis.ALLUSER}`)
+        .then((res) => {
+          setAllUsersExcel(res.data.result);
+        });
+    }
   };
 
   let headers = [
@@ -148,16 +177,42 @@ function UserEditList(props) {
     );
   };
 
-  var pageChange = ({ selected }) => {
-    setPaginatedSalesOrders(
-      fetchUsers.slice(selected * perPage, perPage * (selected + 1)),
-    );
-    setPage(selected * perPage);
+  // var pageChange = ({ selected }) => {
+  //   setPaginatedSalesOrders(
+  //     fetchUsers.slice(selected * perPage, perPage * (selected + 1)),
+  //   );
+  //   setPage(selected * perPage);
+  // };
+  
+  var pageChange = ({ selected }) => {    // Portal Security Assessment_Pagination
+
+    setPage(selected);
+
+    props.loading(true);
+
+    http.get(`${apis.ALLUSER}?page=${selected + 1}&limit=${perPage}`)
+      .then((res) => {
+
+        setFetchUsers(res.data.result);
+        setPageCount(Math.ceil(res.data.total / perPage));
+
+        props.loading(false);
+
+        if (tableRef.current) {
+          tableRef.current.scrollTop = 0;
+        }
+
+      });
+
   };
 
+  // useEffect(() => {
+  //   pageChange({ selected: 0 });
+  // }, [perPage, fetchUsers]);
+
   useEffect(() => {
-    pageChange({ selected: 0 });
-  }, [perPage, fetchUsers]);
+    pageChange({ selected: 0 });    // Portal Security Assessment_Pagination
+  }, [perPage]);
 
   let saveFormData = (data) => {
     if (data.password == undefined) {
@@ -224,9 +279,16 @@ function UserEditList(props) {
   };
 
   // const filteredUsers = () => {
-  const filteredUser = fetchUsers.filter((user) => {
-    return user.user_code.toLowerCase().includes(search.toLowerCase());
-  });
+  // const filteredUser = fetchUsers.filter((user) => {
+  //   return user.user_code.toLowerCase().includes(search.toLowerCase());
+  // });
+  const filteredUsers = search
+    ? (allUsersExcel || []).filter((user) =>
+      (user?.user_code || "")
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    )
+    : fetchUsers;
 
   //   setFilteredUser(filteredUser);
   // };
@@ -260,7 +322,8 @@ function UserEditList(props) {
               </button>
             }
           >
-            <ExcelSheet data={fetchUsers} name="FI Register Report">
+            {/* <ExcelSheet data={fetchUsers} name="FI Register Report"> */}
+            <ExcelSheet data={allUsersExcel} name="FI Register Report">
               {headers?.map((value, i) => (
                 <ExcelColumn
                   key={value}
@@ -272,7 +335,12 @@ function UserEditList(props) {
           </ExcelFile>
         ) : null}
       </div>
-      <div className="table-div" style={{ height: "550px" }}>
+      {/* <div className="table-div" style={{ height: "550px" }}> */}
+      <div
+        className="table-div"
+        style={{ height: "550px", overflowY: "auto" }}
+        ref={tableRef}
+      >
         <div className="">
           <table className="table" style={{ marginLeft: "0px" }}>
             <thead>
@@ -369,8 +437,8 @@ function UserEditList(props) {
               </tr>
             </thead>
             <tbody style={{ height: "auto", textAlign: "center" }}>
-              {filteredUser?.map((row, key) => {
-                props.loading(false);
+              {filteredUsers?.map((row, key) => {
+                // props.loading(false);
                 return generateRow(
                   row,
                   key,
@@ -387,51 +455,57 @@ function UserEditList(props) {
         </div>
       </div>
       <br />
-      {/* <div className="row">
-        <ReactPaginate
-          previousLabel={"prev"}
-          nextLabel={"next"}
-          breakLabel={"..."}
-          breakClassName={"break-me"}
-          pageCount={fetchUsers.length / perPage}
-          marginPagesDisplayed={2}
-          pageRangeDisplayed={5}
-          onPageChange={pageChange}
-          containerClassName={"pagination"}
-          subContainerClassName={"pages pagination"}
-          activeClassName={"active"}
-          // breakClassName={'page-item'}
-          breakLinkClassName={"page-link"}
-          // containerClassName={'pagination'}
-          pageClassName={"page-item"}
-          pageLinkClassName={"page-link"}
-          previousClassName={"page-item"}
-          previousLinkClassName={"page-link"}
-          nextClassName={"page-item"}
-          nextLinkClassName={"page-link"}
+      {!search && (
+        <div className="row">
+          <ReactPaginate
+            previousLabel={"prev"}
+            nextLabel={"next"}
+            breakLabel={"..."}
+            breakClassName={"break-me"}
 
-          // activeClassName={'active'}
-        />{" "}
-        <div className="col-3">
-          <label className="float-right" style={{ lineHeight: "35px" }}>
-            Visible Rows:
-          </label>
+            pageCount={pageCount}
+
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+
+            onPageChange={pageChange}
+
+            containerClassName={"pagination"}
+            activeClassName={"active"}
+
+            pageClassName={"page-item"}
+            pageLinkClassName={"page-link"}
+
+            previousClassName={"page-item"}
+            previousLinkClassName={"page-link"}
+
+            nextClassName={"page-item"}
+            nextLinkClassName={"page-link"}
+
+            breakLinkClassName={"page-link"}
+          />{" "}
+          <div className="col-3">
+            <label className="float-right" style={{ lineHeight: "35px" }}>
+              Visible Rows:
+            </label>
+          </div>
+          &emsp;
+          <div className="col-1">
+            <select
+              onChange={(e) => {
+                // setPerpage(e.target.value);
+                setPerpage(parseInt(e.target.value));
+              }}
+              style={{ width: "50px" }}
+            >
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="150">150</option>
+              <option value="200">200</option>
+            </select>
+          </div>
         </div>
-        &emsp;
-        <div className="col-1">
-          <select
-            onChange={(e) => {
-              setPerpage(e.target.value);
-            }}
-            style={{ width: "50px" }}
-          >
-            <option>10</option>
-            <option>20</option>
-            <option>50</option>
-            <option>100</option>
-          </select>
-        </div>
-      </div> */}
+      )}
 
       {/* User Edit modal */}
       <Modal
