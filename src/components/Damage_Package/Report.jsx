@@ -174,7 +174,7 @@ export const Report = (props) => {
     },
     {
       title: "Material Document No",
-      key: "MAT_DOC",
+      key: "MAT_DOC_NO",// Re_7:Material Documnet No mismatch fixed
       width: "200px",
     },
     { title: "Delivery Qty", key: "GR_QTY", hidden: reportType === "RR" },
@@ -452,14 +452,15 @@ export const Report = (props) => {
         </Link>
       );
     }
-    else if (key === "MAT_DOC") {
+    else if (key === "MAT_DOC_NO") {   // Re_7:Material Documnet No mismatch fixed
 
-      // RR-wise → take from top-level
-      if (reportType === "RR") {
-        return data.MAT_DOC_NO || "-";
-      }
+      // // RR-wise → take from top-level
+      // if (reportType === "RR") {
+      //   return data.MAT_DOC_NO || "-";
+      // }
 
-      return data.MAT_DOC;
+      // return data.MAT_DOC;
+      return data.MAT_DOC_NO;
     }
     else {
       return value ? value : "-";
@@ -738,16 +739,18 @@ export const Report = (props) => {
                       //       .filter(Boolean)
                       //   )].join(", ") || "-",
 
-                      "Material Document No":
-                        reportType === "RR"
-                          ? item.MAT_DOC_NO
+                      // "Material Document No":
+                      //   reportType === "RR"
+                      //     ? item.MAT_DOC_NO
+                      //       ? `\u200B${String(item.MAT_DOC_NO)}`
+                      //       : "-"
+                      //     : item.MAT_DOC
+                      //       ? `\u200B${String(item.MAT_DOC)}`
+                      //       : "-",
+                      "Material Document No":    // Re_7:Material Documnet No mismatch fixed
+                         item.MAT_DOC_NO
                             ? `\u200B${String(item.MAT_DOC_NO)}`
-                            : "-"
-                          : item.MAT_DOC
-                            ? `\u200B${String(item.MAT_DOC)}`
                             : "-",
-
-
 
                       "GR_QTY": item.GR_QTY
                         ? Number(item.GR_QTY).toFixed(2)
