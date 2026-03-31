@@ -150,7 +150,7 @@ function SideBar(props) {
               {/* cnf and admin */}
               {viewLogic([1, 3]) && (
                 <>
-                  {(props.CFA_AUTH?.CAP_INVT ||
+                  {false && (props.CFA_AUTH?.CAP_INVT ||
                     props.CFA_AUTH?.APP_INVT ||
                     props.CFA_AUTH?.DIS_INVT) && (
                     <li className="sidebar-li">
